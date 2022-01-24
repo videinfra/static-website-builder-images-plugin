@@ -7,6 +7,9 @@ exports.imageSizes = {
     // Image file extensions
     extensions: ['jpg', 'png'],
 
+    // Image quality, only for JPG images
+    quality: 90,
+
     // Production only settings, overwrites default settings
     production: {
     },

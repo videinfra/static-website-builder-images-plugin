@@ -33,7 +33,9 @@ function imageSizes () {
             modifyFilename: false,
             transform: function (sharp) {
                 // Convert to webp
-                sharp = sharp.webp({quality: 100});
+                sharp = sharp.webp({
+                    quality: getConfig.getTaskConfig('imageSizes', 'quality')
+                });
                 return sharp;
             },
             config: {
