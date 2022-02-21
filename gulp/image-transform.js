@@ -37,7 +37,7 @@ class ImageTransform {
         }
 
         if (!Array.isArray(this.config.src) || !this.config.src.length) {
-            throw new Error('@TODO error message');
+            throw new Error('Image path source folders must be an array');
         }
     }
 
@@ -97,6 +97,7 @@ class ImageTransform {
             encodeCount: 0, // to copy image / keep existing format
             resize: false,
             count: 1, // 1 == to copy image
+            copy: true,
         };
 
         if (settings.dest) {
@@ -106,6 +107,7 @@ class ImageTransform {
                 settings.encode.oxipng = optimization.png;
                 settings.resize = {'': {}};
                 settings.encodeCount++;
+                settings.copy = false;
             }
             if (optimization.jpg && (extension === 'jpg' || extension === 'jpeg')) {
                 // Copy JPG
@@ -113,6 +115,7 @@ class ImageTransform {
                 settings.encode.mozjpeg = optimization.jpg;
                 settings.resize = {'': {}};
                 settings.encodeCount++;
+                settings.copy = false;
             }
             if (optimization.webp && (extension === 'webp')) {
                 // Copy webp
@@ -120,6 +123,7 @@ class ImageTransform {
                 settings.encode.webp = optimization.webp;
                 settings.resize = {'': {}};
                 settings.encodeCount++;
+                settings.copy = false;
             } else if (optimization.webp && (extension === 'jpg' || extension === 'jpeg' || extension === 'png')) {
                 // Convert PNG or JPG into WEBP
                 settings.encode = settings.encode || {};
@@ -158,16 +162,11 @@ class ImageTransform {
     }
 
     add (fileName) {
-
         let fileSettings = this.fileSettingsCache[fileName];
 
         if (!fileSettings && fileSettings !== null) {
             this.fileSettingsCache[fileName] = fileSettings = this.getResizeSettings(this.getOptimizationSettings(fileName));
         }
-
-        // console.log('ADD:', fileName);
-        // console.log('    >', fileSettings.src);
-        // console.log('    <', fileSettings.dest);
 
         return new Promise((resolve, _reject) => {
             // Clone to prevent "resolve" from being added to the cache
@@ -198,7 +197,9 @@ class ImageTransform {
             for (let fileNamePostfix in fileSettings.resize) {
                 this.processDigest(fileSettings, fileNamePostfix);
             }
-        } else {
+        }
+
+        if (fileSettings.copy) {
             // No encoding or resize, just copy file to the destination
             const destFileName = fileSettings.dest + (fileSettings.extension ? `.${ fileSettings.extension }` : '');
 
@@ -307,11 +308,12 @@ class ImageTransform {
 
     getImagePool () {
         if (!this.imagePool) {
-            // logMessage('Starting', TASK_NAME, '...');
             this.stats.count = this.stats.count - this.stats.complete;
             this.stats.complete = 0;
             this.stats.startTime = Date.now();
-            this.imagePool = new ImagePool(cpus().length);
+
+            const cpusCount = cpus().length;
+            this.imagePool = new ImagePool(cpusCount);
         }
         return this.imagePool;
     }
