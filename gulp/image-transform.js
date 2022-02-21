@@ -24,6 +24,8 @@ class ImageTransform {
 
         this.fileSettingsCache = {};
         this.queue = [];
+        this.cpuActive = 0;
+        this.cpuCount = Math.ceil(cpus().length / 2);
         this.imagePool = null;
         this.stats = {
             startTime: 0,
@@ -195,7 +197,12 @@ class ImageTransform {
 
         if (fileSettings.resize) {
             for (let fileNamePostfix in fileSettings.resize) {
-                this.processDigest(fileSettings, fileNamePostfix);
+                this.queue.push({
+                    fileSettings: fileSettings,
+                    fileNamePostfix: fileNamePostfix,
+                });
+
+                this.processNext();
             }
         }
 
@@ -217,6 +224,16 @@ class ImageTransform {
                     this.setFileComplete(fileSettings);
                 });
             });
+        }
+    }
+
+    processNext () {
+        if (this.cpuActive < this.cpuCount) {
+            const item = this.queue.shift();
+            if (item) {
+                this.cpuActive++;
+                this.processDigest(item.fileSettings, item.fileNamePostfix);
+            }
         }
     }
 
@@ -301,8 +318,14 @@ class ImageTransform {
                     });
                 });
             }
+
+            this.cpuActive--;
+            this.processNext();
         }).catch((_err) => {
             this.setFileComplete(fileSettings);
+
+            this.cpuActive--;
+            this.processNext();
         });
     }
 
@@ -312,8 +335,7 @@ class ImageTransform {
             this.stats.complete = 0;
             this.stats.startTime = Date.now();
 
-            const cpusCount = cpus().length;
-            this.imagePool = new ImagePool(cpusCount);
+            this.imagePool = new ImagePool(this.cpuCount);
         }
         return this.imagePool;
     }
