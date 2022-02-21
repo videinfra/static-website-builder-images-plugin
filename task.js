@@ -1,6 +1,6 @@
 const gulp = require('gulp');
 const memoize = require('nano-memoize');
-const gulpSharp = require('@donmahallem/gulp-sharp').gulpSharp;
+const gulpTask = require('./gulp/index');
 
 const globs = require('@videinfra/static-website-builder/lib/globs-helper');
 const getPaths = require('@videinfra/static-website-builder/lib/get-path');
@@ -19,31 +19,26 @@ const getGlobPaths = memoize(function () {
 
     return globs.generate(
         globs.paths(sourcePaths).filesWithExtensions(extensions), // Files to watch
-        globs.paths(sourcePaths).paths(ignore).ignore(),          // List of files which to ignore
+        globs.paths(sourcePaths).paths(ignore).ignore()           // List of files which to ignore
     );
 });
 
 
 function imageSizes () {
+    const taskConfig = {
+        src: getPaths.getSourcePaths('imageSizes'),
+        dest: getPaths.getDestPath('imageSizes'),
+        optimization: getConfig.getTaskConfig('imageSizes', 'optimization'),
+        resize: getConfig.getTaskConfig('imageSizes', 'resize'),
+    };
+
     return gulp
-        .src(getGlobPaths(), { since: gulp.lastRun(imageSizes) })
+        .src(getGlobPaths(), { read: false })
         .pipe(taskStart())
 
-        .pipe(gulpSharp({
-            modifyFilename: false,
-            transform: function (sharp) {
-                // Convert to webp
-                sharp = sharp.webp({
-                    quality: getConfig.getTaskConfig('imageSizes', 'quality')
-                });
-                return sharp;
-            },
-            config: {
-            },
-        }))
+        .pipe(gulpTask(taskConfig))
 
         .pipe(taskBeforeDest())
-        .pipe(gulp.dest(getPaths.getDestPath('imageSizes')))
 
         // Reload on change
         .pipe(taskEnd());
@@ -52,7 +47,6 @@ function imageSizes () {
 function imageSizesWatch () {
     return taskWatch(getGlobPaths(), imageSizes);
 }
-
 
 exports.build = imageSizes;
 exports.watch = imageSizesWatch;

@@ -1,3 +1,5 @@
+exports.images = false;
+
 exports.imageSizes = {
     // Glob list of files, which to ignore, relative to the image source folder
     // see https://gulpjs.com/docs/en/getting-started/explaining-globs/
@@ -5,10 +7,32 @@ exports.imageSizes = {
     ],
 
     // Image file extensions
-    extensions: ['jpg', 'png'],
+    extensions: ['jpg', 'png', 'webp', 'gif', 'pdf', 'svg'],
 
-    // Image quality, only for JPG images
-    quality: 90,
+    // Optimization settings + format conversion
+    optimization: false,
+
+    /*
+    optimization: {
+        // Converting from PNG or JPG into WEBP + optimize
+        webp: {
+            quality: 89
+        },
+
+        // PNG optimization
+        png: {
+            quality: 89
+        },
+
+        // JPG optimization
+        jpg: {
+            quality: 91
+        },
+    },
+    */
+
+    // Resize settings
+    resize: false,
 
     // Production only settings, overwrites default settings
     production: {

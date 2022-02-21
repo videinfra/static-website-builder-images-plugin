@@ -9,8 +9,8 @@
 ## Features
 
 - [x] Converts jpg and png images into webp format
-- [ ] Configuration per file
-- [ ] Resize and crop images
+- [x] Optimize images
+- [x] Resize and crop images
 
 ## Installing
 
@@ -39,10 +39,48 @@ exports.imageSizes = {
     ],
 
     // Image file extensions
-    extensions: ['jpg', 'png'],
+    extensions: ['jpg', 'png', 'webp', 'gif', 'pdf', 'svg'],
 
-    // Image quality, only for JPG images
-    quality: 90,
+    // Optimization settings + format conversion
+    // Default is `false`, images won't be converted into WEBP and won't be optimized
+    optimization: {
+        // Converting from PNG or JPG into WEBP + optimize
+        webp: {
+            quality: 89
+        },
+
+        // PNG optimization
+        png: {
+            quality: 89
+        },
+
+        // JPG optimization
+        jpg: {
+            quality: 91
+        },
+    },
+
+    // Resize settings
+    // Default is `false`, images won't be resized
+    resize: {
+        // glob: { config }
+        '/media/test/*.*': {
+            // postfix: { size settings }
+
+            // resize to specific size, crop if aspect ratio changes
+            '@xs': { width: 100, height: 100 },
+
+            // resize to specific size, when croping uses 'position' as a center point around which
+            // to crop the image: [0.5, 0.5] == center (default), [0, 0] == left top corner
+            '@md': { width: 100, height: 100, position: [0.5, 0.5] },
+
+            // resize to specific width; aspect ratio is preserved
+            '@lg': { width: 300 },
+
+            // resize to specific height; aspect ratio is preserved
+            '@xl': { height: 500 },
+        },
+    },
 
     // Production only settings, overwrites default settings
     production: {
