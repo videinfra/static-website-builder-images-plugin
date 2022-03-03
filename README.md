@@ -82,6 +82,9 @@ exports.imageSizes = {
         },
     },
 
+    // How many of CPU cores to use, default is half of available
+    cpuCount: null,
+
     // Production only settings, overwrites default settings
     production: {
     },

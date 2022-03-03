@@ -6,10 +6,24 @@ const minimatch = require('minimatch');
 const merge = require('lodash/merge');
 const crop = require('./crop');
 const getImageSize = require('./image-size');
+const cloneBitmap = require('./clone-bitmap');
 
 class ImageTransform {
 
     constructor (config) {
+        // Total number of cpu cores, for ImagePool we will dedicate half of the cpu cores, but at least 3 if possible
+        // Number of images which we will process in parallel as half of the cpu cores - 1
+        let   cpuCount = cpus().length;
+        let   parallelCount = 0;
+
+        if (config.cpuCount) {
+            cpuCount = Math.min(config.cpuCount, cpuCount);
+            parallelCount = Math.max(1, cpuCount - 1);
+        } else {
+            parallelCount = Math.max(1, Math.ceil(cpuCount / 2) - 1);
+            cpuCount = Math.min(cpuCount, Math.max(3, Math.ceil(cpuCount / 2)));
+        }
+
         this.config = {
             optimization: {
                 webp: config.optimization ? config.optimization.webp : false,
@@ -24,8 +38,9 @@ class ImageTransform {
 
         this.fileSettingsCache = {};
         this.queue = [];
+        this.parallelCount = parallelCount;
+        this.cpuCount = cpuCount;
         this.cpuActive = 0;
-        this.cpuCount = Math.ceil(cpus().length / 2);
         this.imagePool = null;
         this.stats = {
             startTime: 0,
@@ -210,14 +225,14 @@ class ImageTransform {
             // No encoding or resize, just copy file to the destination
             const destFileName = fileSettings.dest + (fileSettings.extension ? `.${ fileSettings.extension }` : '');
 
-            fs.mkdir(path.dirname(destFileName), { recursive: true }, (_err) => {
-                if (_err) {
-                    console.error(_err);
+            fs.mkdir(path.dirname(destFileName), { recursive: true }, (err) => {
+                if (err) {
+                    this.handleError(err);
                 }
 
                 fs.copyFile(fileSettings.src, destFileName, (err) => {
                     if (err) {
-                        // @TODO Handle error
+                        this.handleError(err);
                     }
 
                     fileSettings.output.push(destFileName);
@@ -228,80 +243,118 @@ class ImageTransform {
     }
 
     processNext () {
-        if (this.cpuActive < this.cpuCount) {
-            const item = this.queue.shift();
-            if (item) {
-                this.cpuActive++;
-                this.processDigest(item.fileSettings, item.fileNamePostfix);
+        setTimeout(this.processNextDelayed.bind(this), 1);
+    }
+
+    processNextDelayed () {
+        if (this.cpuActive < this.parallelCount) {
+            const queue = this.queue;
+
+            for (let i = 0; i < queue.length; i++) {
+                const item = queue[i];
+
+                if (item && !item.fileSettings.processing) {
+                    queue.splice(i, 1);
+
+                    this.cpuActive++;
+                    this.processDigest(item.fileSettings, item.fileNamePostfix);
+                }
             }
         }
     }
 
     processDigest (fileSettings, fileNamePostfix) {
+        // Make sure we are not procesing same image in parallel at the same time
+        fileSettings.processing = true;
+
         const imagePool = this.getImagePool();
-        const image = imagePool.ingestImage(fileSettings.src);
+        const image = fileSettings.image || (fileSettings.image = imagePool.ingestImage(fileSettings.src));
 
-        image.decoded.then((decoded) => {
-            const fileSize = fileSettings.resize[fileNamePostfix];
-            const encode = merge({}, fileSettings.encode);
+        if (fileSettings.decoded) {
+            // Re-use existing decoded data
+            this.processDecoded(fileSettings, fileNamePostfix, fileSettings.decoded);
+        } else {
+            image.decoded.then(this.processDecoded.bind(this, fileSettings, fileNamePostfix), (err) => {
+                this.handleError(err);
+            });
+        }
+    }
 
-            // Resize image
-            if (fileSize.width || fileSize.height || fileSize.multiplier) {
-                const resize = getImageSize(decoded.bitmap, fileSize);
+    processDecoded (fileSettings, fileNamePostfix, decoded) {
+        const image = fileSettings.image;
+        const fileSize = fileSettings.resize[fileNamePostfix];
+        const encode = merge({}, fileSettings.encode);
 
-                if (resize) {
-                    // squoosh doesn't have a crop / fitMethod implemented yet
-                    // Using custom implementation
-                    // @TODO Replace with squoosh built-in crop when it's ready
-                    // https://github.com/GoogleChromeLabs/squoosh/issues/921
-                    decoded.bitmap = crop(decoded.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
+        // Save decoded data and bitmap
+        fileSettings.decoded = decoded;
 
-                    // Overwrite quality
-                    if (fileSize.quality) {
-                        if (encode.webp) {
-                            if (typeof fileSize.quality === 'number') {
-                                encode.webp.quality = fileSize.quality;
-                            } else if (fileSize.quality && fileSize.quality.webp) {
-                                encode.webp.quality = fileSize.quality.webp;
-                            }
-                        }
-                        if (encode.oxipng) {
-                            if (typeof fileSize.quality === 'number') {
-                                encode.oxipng.quality = fileSize.quality;
-                            } else if (fileSize.quality && fileSize.quality.webp) {
-                                encode.oxipng.quality = fileSize.quality.webp;
-                            }
-                        }
-                        if (encode.mozjpeg) {
-                            if (typeof fileSize.quality === 'number') {
-                                encode.mozjpeg.quality = fileSize.quality;
-                            } else if (fileSize.quality && fileSize.quality.webp) {
-                                encode.mozjpeg.quality = fileSize.quality.webp;
-                            }
+        // Resize image
+        if (fileSize.width || fileSize.height || fileSize.multiplier) {
+            const resize = getImageSize(decoded.bitmap, fileSize);
+
+            if (resize) {
+                fileSettings.bitmap = fileSettings.bitmap || decoded.bitmap;
+
+                // squoosh doesn't have a crop / fitMethod implemented yet
+                // Using custom implementation
+                // @TODO Replace with squoosh built-in crop when it's ready
+                // https://github.com/GoogleChromeLabs/squoosh/issues/921
+                decoded.bitmap = crop(cloneBitmap(fileSettings.bitmap), resize[0], resize[1], fileSize.position /* crop position */);
+
+                // Overwrite quality
+                if (fileSize.quality) {
+                    if (encode.webp) {
+                        if (typeof fileSize.quality === 'number') {
+                            encode.webp.quality = fileSize.quality;
+                        } else if (fileSize.quality && fileSize.quality.webp) {
+                            encode.webp.quality = fileSize.quality.webp;
                         }
                     }
-
-                    image.preprocess({
-                        resize: {
-                            enabled: true,
-                            width: resize[0],
-                            height: resize[1],
+                    if (encode.oxipng) {
+                        if (typeof fileSize.quality === 'number') {
+                            encode.oxipng.quality = fileSize.quality;
+                        } else if (fileSize.quality && fileSize.quality.webp) {
+                            encode.oxipng.quality = fileSize.quality.webp;
                         }
-                    }).then(this.processEncode.bind(this, image, encode, fileSettings, fileNamePostfix));
-                } else {
-                    // Resize not needed, only converting format and/or optimizing
-                    this.processEncode(image, encode, fileSettings, fileNamePostfix);
+                    }
+                    if (encode.mozjpeg) {
+                        if (typeof fileSize.quality === 'number') {
+                            encode.mozjpeg.quality = fileSize.quality;
+                        } else if (fileSize.quality && fileSize.quality.webp) {
+                            encode.mozjpeg.quality = fileSize.quality.webp;
+                        }
+                    }
                 }
+
+                image.preprocess({
+                    resize: {
+                        enabled: true,
+                        width: resize[0],
+                        height: resize[1],
+                    }
+                }).then(this.processEncode.bind(this, image, encode, fileSettings, fileNamePostfix), (err) => {
+                    this.handleError(err);
+                });
             } else {
                 // Resize not needed, only converting format and/or optimizing
                 this.processEncode(image, encode, fileSettings, fileNamePostfix);
             }
-        });
+        } else {
+            // Resize not needed, only converting format and/or optimizing
+            this.processEncode(image, encode, fileSettings, fileNamePostfix);
+        }
     }
 
     processEncode (image, encode, fileSettings, fileNamePostfix) {
+        // Restore bitmap, to clean up old memory
+        if (fileSettings.bitmap) {
+            fileSettings.decoded.bitmap = fileSettings.bitmap;
+        }
+
         image.encode(encode).then(() => {
             const encodedImages = Object.values(image.encodedWith);
+            const count = encodedImages.length;
+            let   processed = 0;
 
             for (const encodedImage of encodedImages) {
                 encodedImage.then((encodedImage) => {
@@ -309,19 +362,38 @@ class ImageTransform {
                     const destFileExtension = encodedImage.extension;
                     const destFile = `${ fileSettings.dest }${ fileNamePostfix }.${ destFileExtension }`;
 
-                    fs.mkdir(path.dirname(destFile), { recursive: true }, (_err) => {
+                    fs.mkdir(path.dirname(destFile), { recursive: true }, (err) => {
                         fileSettings.output.push(destFile);
 
-                        fs.writeFile(destFile, binary, (_err) => {
+                        if (err) {
+                            this.handleError(err);
                             this.setFileComplete(fileSettings);
-                        });
+
+                            if (++processed === count) {
+                                fileSettings.processing = false;
+                                this.cpuActive--;
+                                this.processNext();
+                            }
+                        } else {
+                            fs.writeFile(destFile, binary, (err) => {
+                                if (err) {
+                                    this.handleError(err);
+                                }
+
+                                this.setFileComplete(fileSettings);
+
+                                if (++processed === count) {
+                                    fileSettings.processing = false;
+                                    this.cpuActive--;
+                                    this.processNext();
+                                }
+                            });
+                        }
                     });
                 });
             }
-
-            this.cpuActive--;
-            this.processNext();
-        }).catch((_err) => {
+        }).catch((err) => {
+            this.handleError(err);
             this.setFileComplete(fileSettings);
 
             this.cpuActive--;
@@ -349,6 +421,9 @@ class ImageTransform {
         this.stats.complete++;
 
         if (fileSettings.count === fileSettings.complete) {
+            fileSettings.decoded = null;
+            fileSettings.bitmap = null;
+
             if (this.stats.complete === this.stats.count) {
                 this.done();
             }
@@ -357,6 +432,11 @@ class ImageTransform {
         }
     }
 
+    /**
+     * Handle when all image processing is complete
+     *
+     * @protected
+     */
     done () {
         // Delay to make sure there are no other images added
         // during interupt, this is important because we are closing
@@ -370,8 +450,17 @@ class ImageTransform {
             }
         }, 60);
     }
-}
 
+    /**
+     * Handle error by outputing to console
+     *
+     * @param {object} err Error
+     * @protected
+     */
+    handleError (err) {
+        console.error(err);
+    }
+}
 
 module.exports = function (config) {
     return new ImageTransform(config);
