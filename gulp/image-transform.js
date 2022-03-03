@@ -6,7 +6,6 @@ const minimatch = require('minimatch');
 const merge = require('lodash/merge');
 const crop = require('./crop');
 const getImageSize = require('./image-size');
-const cloneBitmap = require('./clone-bitmap');
 
 class ImageTransform {
 
@@ -270,14 +269,9 @@ class ImageTransform {
         const imagePool = this.getImagePool();
         const image = fileSettings.image || (fileSettings.image = imagePool.ingestImage(fileSettings.src));
 
-        if (fileSettings.decoded) {
-            // Re-use existing decoded data
-            this.processDecoded(fileSettings, fileNamePostfix, fileSettings.decoded);
-        } else {
-            image.decoded.then(this.processDecoded.bind(this, fileSettings, fileNamePostfix), (err) => {
-                this.handleError(err);
-            });
-        }
+        image.decoded.then(this.processDecoded.bind(this, fileSettings, fileNamePostfix), (err) => {
+            this.handleError(err);
+        });
     }
 
     processDecoded (fileSettings, fileNamePostfix, decoded) {
@@ -285,21 +279,23 @@ class ImageTransform {
         const fileSize = fileSettings.resize[fileNamePostfix];
         const encode = merge({}, fileSettings.encode);
 
-        // Save decoded data and bitmap
-        fileSettings.decoded = decoded;
+        // Restore bitmap
+        decoded.bitmap = fileSettings.bitmap || decoded.bitmap;
 
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
             const resize = getImageSize(decoded.bitmap, fileSize);
 
             if (resize) {
+                // Save decoded bitmap to restore when processing next image size
                 fileSettings.bitmap = fileSettings.bitmap || decoded.bitmap;
 
                 // squoosh doesn't have a crop / fitMethod implemented yet
                 // Using custom implementation
                 // @TODO Replace with squoosh built-in crop when it's ready
                 // https://github.com/GoogleChromeLabs/squoosh/issues/921
-                decoded.bitmap = crop(cloneBitmap(fileSettings.bitmap), resize[0], resize[1], fileSize.position /* crop position */);
+                // decoded.bitmap = crop(fileSettings.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
+                decoded.bitmap = crop(decoded.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
 
                 // Overwrite quality
                 if (fileSize.quality) {
@@ -346,11 +342,6 @@ class ImageTransform {
     }
 
     processEncode (image, encode, fileSettings, fileNamePostfix) {
-        // Restore bitmap, to clean up old memory
-        if (fileSettings.bitmap) {
-            fileSettings.decoded.bitmap = fileSettings.bitmap;
-        }
-
         image.encode(encode).then(() => {
             const encodedImages = Object.values(image.encodedWith);
             const count = encodedImages.length;
@@ -421,7 +412,6 @@ class ImageTransform {
         this.stats.complete++;
 
         if (fileSettings.count === fileSettings.complete) {
-            fileSettings.decoded = null;
             fileSettings.bitmap = null;
 
             if (this.stats.complete === this.stats.count) {
