@@ -6,22 +6,14 @@ const minimatch = require('minimatch');
 const merge = require('lodash/merge');
 const crop = require('./crop');
 const getImageSize = require('./image-size');
+const ImagePoolManager = require('./image-pool');
 
 class ImageTransform {
 
     constructor (config) {
         // Total number of cpu cores, for ImagePool we will dedicate half of the cpu cores, but at least 3 if possible
-        // Number of images which we will process in parallel as half of the cpu cores - 1
-        let   cpuCount = cpus().length;
-        let   parallelCount = 0;
-
-        if (config.cpuCount) {
-            cpuCount = Math.min(config.cpuCount, cpuCount);
-            parallelCount = Math.max(1, cpuCount - 1);
-        } else {
-            parallelCount = Math.max(1, Math.ceil(cpuCount / 2) - 1);
-            cpuCount = Math.min(cpuCount, Math.max(3, Math.ceil(cpuCount / 2)));
-        }
+        let cpuCount = cpus().length;
+        cpuCount = Math.min(cpuCount, Math.max(3, Math.ceil(cpuCount / 2)));
 
         this.config = {
             optimization: {
@@ -35,17 +27,16 @@ class ImageTransform {
             dest: config.dest || null,
         };
 
+        this.imagePoolManager = new ImagePoolManager({
+            cpuCount: cpuCount,
+            parallelCount: cpuCount,
+            onReset: this.resetIngestCache.bind(this)
+        });
+
+        this.ingestCache = {};
+        this.bitmapCache = {};
+
         this.fileSettingsCache = {};
-        this.queue = [];
-        this.parallelCount = parallelCount;
-        this.cpuCount = cpuCount;
-        this.cpuActive = 0;
-        this.imagePool = null;
-        this.stats = {
-            startTime: 0,
-            count: 0,
-            complete: 0,
-        };
 
         // To array
         if (typeof this.config.src === 'string') {
@@ -55,6 +46,10 @@ class ImageTransform {
         if (!Array.isArray(this.config.src) || !this.config.src.length) {
             throw new Error('Image path source folders must be an array');
         }
+    }
+
+    resetIngestCache () {
+        this.ingestCache = {};
     }
 
     normalizePath (folderName) {
@@ -207,16 +202,9 @@ class ImageTransform {
      * @protected
      */
     processFile (fileSettings) {
-        this.setTotalCount(this.stats.count + fileSettings.count);
-
         if (fileSettings.resize) {
             for (let fileNamePostfix in fileSettings.resize) {
-                this.queue.push({
-                    fileSettings: fileSettings,
-                    fileNamePostfix: fileNamePostfix,
-                });
-
-                this.processNext();
+                this.processIngest(fileSettings, fileNamePostfix);
             }
         }
 
@@ -241,46 +229,28 @@ class ImageTransform {
         }
     }
 
-    processNext () {
-        setTimeout(this.processNextDelayed.bind(this), 1);
-    }
-
-    processNextDelayed () {
-        if (this.cpuActive < this.parallelCount) {
-            const queue = this.queue;
-
-            for (let i = 0; i < queue.length; i++) {
-                const item = queue[i];
-
-                if (item && !item.fileSettings.processing) {
-                    queue.splice(i, 1);
-
-                    this.cpuActive++;
-                    this.processDigest(item.fileSettings, item.fileNamePostfix);
-                }
-            }
-        }
-    }
-
-    processDigest (fileSettings, fileNamePostfix) {
+    processIngest (fileSettings, fileNamePostfix) {
         // Make sure we are not procesing same image in parallel at the same time
         fileSettings.processing = true;
 
-        const imagePool = this.getImagePool();
-        const image = fileSettings.image || (fileSettings.image = imagePool.ingestImage(fileSettings.src));
+        this.imagePoolManager.getImagePool().then((imagePool) => {
+            fileSettings.imagePoolUsed = true;
 
-        image.decoded.then(this.processDecoded.bind(this, fileSettings, fileNamePostfix), (err) => {
-            this.handleError(err);
+            // Reuse image object
+            const image = this.ingestCache[fileSettings.src] || (this.ingestCache[fileSettings.src] = imagePool.ingestImage(fileSettings.src));
+
+            image.decoded.then(this.processDecoded.bind(this, image, fileSettings, fileNamePostfix), (err) => {
+                this.handleError(err);
+            });
         });
     }
 
-    processDecoded (fileSettings, fileNamePostfix, decoded) {
-        const image = fileSettings.image;
+    processDecoded (image, fileSettings, fileNamePostfix, decoded) {
         const fileSize = fileSettings.resize[fileNamePostfix];
         const encode = merge({}, fileSettings.encode);
 
         // Restore bitmap
-        decoded.bitmap = fileSettings.bitmap || decoded.bitmap;
+        decoded.bitmap = this.bitmapCache[fileSettings.src] || decoded.bitmap;
 
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
@@ -288,13 +258,12 @@ class ImageTransform {
 
             if (resize) {
                 // Save decoded bitmap to restore when processing next image size
-                fileSettings.bitmap = fileSettings.bitmap || decoded.bitmap;
+                this.bitmapCache[fileSettings.src] = this.bitmapCache[fileSettings.src] || decoded.bitmap;
 
                 // squoosh doesn't have a crop / fitMethod implemented yet
                 // Using custom implementation
                 // @TODO Replace with squoosh built-in crop when it's ready
                 // https://github.com/GoogleChromeLabs/squoosh/issues/921
-                // decoded.bitmap = crop(fileSettings.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
                 decoded.bitmap = crop(decoded.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
 
                 // Overwrite quality
@@ -358,26 +327,27 @@ class ImageTransform {
 
                         if (err) {
                             this.handleError(err);
-                            this.setFileComplete(fileSettings);
 
-                            if (++processed === count) {
+                            processed++;
+                            if (processed === count) {
                                 fileSettings.processing = false;
-                                this.cpuActive--;
-                                this.processNext();
+                                this.imagePoolManager.markComplete();
                             }
+
+                            this.setFileComplete(fileSettings);
                         } else {
                             fs.writeFile(destFile, binary, (err) => {
                                 if (err) {
                                     this.handleError(err);
                                 }
 
-                                this.setFileComplete(fileSettings);
-
-                                if (++processed === count) {
+                                processed++;
+                                if (processed === count) {
                                     fileSettings.processing = false;
-                                    this.cpuActive--;
-                                    this.processNext();
+                                    this.imagePoolManager.markComplete();
                                 }
+
+                                this.setFileComplete(fileSettings);
                             });
                         }
                     });
@@ -386,59 +356,18 @@ class ImageTransform {
         }).catch((err) => {
             this.handleError(err);
             this.setFileComplete(fileSettings);
-
-            this.cpuActive--;
-            this.processNext();
         });
-    }
-
-    getImagePool () {
-        if (!this.imagePool) {
-            this.stats.count = this.stats.count - this.stats.complete;
-            this.stats.complete = 0;
-            this.stats.startTime = Date.now();
-
-            this.imagePool = new ImagePool(this.cpuCount);
-        }
-        return this.imagePool;
-    }
-
-    setTotalCount (count) {
-        this.stats.count = count;
     }
 
     setFileComplete (fileSettings) {
         fileSettings.complete++;
-        this.stats.complete++;
 
         if (fileSettings.count === fileSettings.complete) {
-            fileSettings.bitmap = null;
-
-            if (this.stats.complete === this.stats.count) {
-                this.done();
-            }
+            this.ingestCache[fileSettings.src] = null;
+            this.bitmapCache[fileSettings.src] = null;
 
             fileSettings.resolve(fileSettings.output);
         }
-    }
-
-    /**
-     * Handle when all image processing is complete
-     *
-     * @protected
-     */
-    done () {
-        // Delay to make sure there are no other images added
-        // during interupt, this is important because we are closing
-        // pool
-        setTimeout(() => {
-            if (this.stats.complete === this.stats.count) {
-                if (this.imagePool) {
-                    this.imagePool.close();
-                    this.imagePool = null;
-                }
-            }
-        }, 60);
     }
 
     /**
