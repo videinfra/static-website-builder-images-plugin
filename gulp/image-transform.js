@@ -33,8 +33,8 @@ class ImageTransform {
             onReset: this.resetIngestCache.bind(this)
         });
 
-        this.ingestCache = {};
-        this.bitmapCache = {};
+        // this.ingestCache = {};
+        // this.bitmapCache = {};
 
         this.fileSettingsCache = {};
 
@@ -49,7 +49,7 @@ class ImageTransform {
     }
 
     resetIngestCache () {
-        this.ingestCache = {};
+        // this.ingestCache = {};
     }
 
     normalizePath (folderName) {
@@ -237,7 +237,8 @@ class ImageTransform {
             fileSettings.imagePoolUsed = true;
 
             // Reuse image object
-            const image = this.ingestCache[fileSettings.src] || (this.ingestCache[fileSettings.src] = imagePool.ingestImage(fileSettings.src));
+            // const image = this.ingestCache[fileSettings.src] || (this.ingestCache[fileSettings.src] = imagePool.ingestImage(fileSettings.src));
+            const image = imagePool.ingestImage(fileSettings.src);
 
             image.decoded.then(this.processDecoded.bind(this, image, fileSettings, fileNamePostfix), (err) => {
                 this.handleError(err);
@@ -250,7 +251,9 @@ class ImageTransform {
         const encode = merge({}, fileSettings.encode);
 
         // Restore bitmap
-        decoded.bitmap = this.bitmapCache[fileSettings.src] || decoded.bitmap;
+        // decoded.bitmap = this.bitmapCache[fileSettings.src] || decoded.bitmap;
+        // console.log(fileSettings.src, decoded.bitmap.width, decoded.bitmap.height);
+        // console.log(image);
 
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
@@ -258,7 +261,7 @@ class ImageTransform {
 
             if (resize) {
                 // Save decoded bitmap to restore when processing next image size
-                this.bitmapCache[fileSettings.src] = this.bitmapCache[fileSettings.src] || decoded.bitmap;
+                // this.bitmapCache[fileSettings.src] = this.bitmapCache[fileSettings.src] || decoded.bitmap;
 
                 // squoosh doesn't have a crop / fitMethod implemented yet
                 // Using custom implementation
@@ -363,8 +366,8 @@ class ImageTransform {
         fileSettings.complete++;
 
         if (fileSettings.count === fileSettings.complete) {
-            this.ingestCache[fileSettings.src] = null;
-            this.bitmapCache[fileSettings.src] = null;
+            // this.ingestCache[fileSettings.src] = null;
+            // this.bitmapCache[fileSettings.src] = null;
 
             fileSettings.resolve(fileSettings.output);
         }
