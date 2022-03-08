@@ -250,7 +250,9 @@ class ImageTransform {
                     });
                 }
             } else {
-                this.processIngest(fileSettings, fileNamePostfix);
+                for (let fileNamePostfix in fileSettings.resize) {
+                    this.processIngest(fileSettings, fileNamePostfix);
+                }
             }
         }
 
