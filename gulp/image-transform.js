@@ -39,6 +39,9 @@ class ImageTransform {
 
         this.fileSettingsCache = {};
 
+        // List of files which were already skipped, we skip them only once during initial build
+        this.filesSkippedCache = {};
+
         // To array
         if (typeof this.config.src === 'string') {
             this.config.src = [this.config.src];
@@ -236,8 +239,13 @@ class ImageTransform {
      */
     processFile (fileSettings) {
         if (fileSettings.resize) {
-            if (this.config.skipExisting) {
-                for (let fileNamePostfix in fileSettings.resize) {
+            for (let fileNamePostfix in fileSettings.resize) {
+                const skipCacheName = `${ fileSettings.dest }${ fileNamePostfix }`;
+
+                if (this.config.skipExisting && !this.filesSkippedCache[skipCacheName]) {
+                    this.filesSkippedCache[skipCacheName] = true;
+
+                    // Check if file doesn't exist yet
                     this.checkFileExists(fileSettings, fileNamePostfix).then(({ exists, fileSettings, fileNamePostfix }) => {
                         if (exists) {
                             // File exists, mark as complete
@@ -248,9 +256,7 @@ class ImageTransform {
                             this.processIngest(fileSettings, fileNamePostfix);
                         }
                     });
-                }
-            } else {
-                for (let fileNamePostfix in fileSettings.resize) {
+                } else {
                     this.processIngest(fileSettings, fileNamePostfix);
                 }
             }
