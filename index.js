@@ -40,6 +40,8 @@ exports.imageSizes = {
 
     // Development only settings, overwrites default settings
     development: {
+        // Skip if image already exists in destination folder
+        skipExisting: true,
     },
 };
 

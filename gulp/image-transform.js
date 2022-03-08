@@ -22,6 +22,7 @@ class ImageTransform {
                 jpg: config.optimization ? config.optimization.jpg : false,
             },
             resize: config.resize || false,
+            skipExisting: config.skipExisting || false,
 
             src: config.src || null,
             dest: config.dest || null,
@@ -195,6 +196,38 @@ class ImageTransform {
         });
     }
 
+    checkFileExists (fileSettings, fileNamePostfix) {
+        const output = [];
+        const promises = [];
+
+        if (fileSettings.encode) {
+            if (fileSettings.encode.oxipng) {
+                output.push(`${ fileSettings.dest }${ fileNamePostfix }.png`);
+            }
+            if (fileSettings.encode.webp) {
+                output.push(`${ fileSettings.dest }${ fileNamePostfix }.webp`);
+            }
+            if (fileSettings.encode.mozjpeg) {
+                output.push(`${ fileSettings.dest }${ fileNamePostfix }.jpg`);
+            }
+        }
+
+        for (let i = 0; i < output.length; i++) {
+            promises.push(new Promise((resolve, reject) => {
+                fs.exists(output[i], (exists) => exists ? resolve() : reject());
+            }));
+        }
+
+
+        return Promise.all(promises).then(() => {
+            fileSettings.output = fileSettings.output.concat(output);
+            fileSettings.complete += output.length;
+            return { exists: true, fileSettings, fileNamePostfix };
+        }).catch(() => {
+            return { exists: false, fileSettings, fileNamePostfix };
+        });
+    }
+
     /**
      * Process image file
      *
@@ -203,7 +236,20 @@ class ImageTransform {
      */
     processFile (fileSettings) {
         if (fileSettings.resize) {
-            for (let fileNamePostfix in fileSettings.resize) {
+            if (this.config.skipExisting) {
+                for (let fileNamePostfix in fileSettings.resize) {
+                    this.checkFileExists(fileSettings, fileNamePostfix).then(({ exists, fileSettings, fileNamePostfix }) => {
+                        if (exists) {
+                            // File exists, mark as complete
+                            if (fileSettings.complete >= fileSettings.count) {
+                                fileSettings.resolve(fileSettings.output);
+                            }
+                        } else {
+                            this.processIngest(fileSettings, fileNamePostfix);
+                        }
+                    });
+                }
+            } else {
                 this.processIngest(fileSettings, fileNamePostfix);
             }
         }
@@ -253,7 +299,6 @@ class ImageTransform {
         // Restore bitmap
         // decoded.bitmap = this.bitmapCache[fileSettings.src] || decoded.bitmap;
         // console.log(fileSettings.src, decoded.bitmap.width, decoded.bitmap.height);
-        // console.log(image);
 
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
@@ -365,7 +410,7 @@ class ImageTransform {
     setFileComplete (fileSettings) {
         fileSettings.complete++;
 
-        if (fileSettings.count === fileSettings.complete) {
+        if (fileSettings.complete >= fileSettings.count) {
             // this.ingestCache[fileSettings.src] = null;
             // this.bitmapCache[fileSettings.src] = null;
 
