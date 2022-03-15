@@ -311,6 +311,7 @@ class ImageTransform {
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
             const resize = getImageSize(decoded.bitmap, fileSize);
+            const useCrop = resize[2];
 
             if (resize) {
                 // Save decoded bitmap to restore when processing next image size
@@ -320,7 +321,9 @@ class ImageTransform {
                 // Using custom implementation
                 // @TODO Replace with squoosh built-in crop when it's ready
                 // https://github.com/GoogleChromeLabs/squoosh/issues/921
-                decoded.bitmap = crop(decoded.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
+                if (useCrop) {
+                    decoded.bitmap = crop(decoded.bitmap, resize[0], resize[1], fileSize.position /* crop position */);
+                }
 
                 // Overwrite quality
                 if (fileSize.quality) {
@@ -351,7 +354,7 @@ class ImageTransform {
                     resize: {
                         enabled: true,
                         width: resize[0],
-                        height: resize[1],
+                        height: useCrop ? resize[1] : null, // if we didn't cropped let squoosh calculate the height
                     }
                 }).then(this.processEncode.bind(this, image, encode, fileSettings, fileNamePostfix), (err) => {
                     this.handleError(err);
