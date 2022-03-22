@@ -160,14 +160,22 @@ class ImageTransform {
             const resizeConfig = this.config.resize;
 
             if (resizeConfig) {
+                const fileResize = {};
+                let   willResize = false;
+
                 for (let glob in resizeConfig) {
                     if (minimatch(relativeFileName, glob)) {
-                        Object.assign(fileSettings.resize, resizeConfig[glob]);
+                        Object.assign(fileResize, resizeConfig[glob]);
+                        willResize = true;
                     }
                 }
 
                 // Add encoded image count * resized count
-                fileSettings.count += fileSettings.encodeCount * (Object.keys(fileSettings.resize).length - 1);
+                // By overwriting resize we skip original image since it's not needed
+                if (willResize) {
+                    fileSettings.count = fileSettings.encodeCount * (Object.keys(fileResize).length);
+                    fileSettings.resize = fileResize;
+                }
             }
 
             return fileSettings;
