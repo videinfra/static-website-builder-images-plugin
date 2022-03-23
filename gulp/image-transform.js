@@ -113,6 +113,7 @@ class ImageTransform {
             resize: false,
             count: 1, // 1 == to copy image
             copy: true,
+            canEncode: extension === 'png' || extension === 'jpg' || extension === 'jpeg' || extension === 'webp',
         };
 
         if (settings.dest) {
@@ -153,13 +154,14 @@ class ImageTransform {
             return null;
         }
     }
+
     getResizeSettings (fileSettings) {
         if (fileSettings) {
             const fileName = fileSettings.src;
             const relativeFileName = this.getRelativeSrcPath(fileName);
             const resizeConfig = this.config.resize;
 
-            if (resizeConfig) {
+            if (resizeConfig && fileSettings.canEncode) {
                 const fileResize = {};
                 let   willResize = false;
 
