@@ -23,6 +23,7 @@ class ImageTransform {
             },
             resize: config.resize || false,
             skipExisting: config.skipExisting || false,
+            poolSize: config.poolSize || null,
 
             src: config.src || null,
             dest: config.dest || null,
@@ -33,9 +34,6 @@ class ImageTransform {
             parallelCount: cpuCount,
             onReset: this.resetIngestCache.bind(this)
         });
-
-        // this.ingestCache = {};
-        // this.bitmapCache = {};
 
         this.fileSettingsCache = {};
 
@@ -53,7 +51,6 @@ class ImageTransform {
     }
 
     resetIngestCache () {
-        // this.ingestCache = {};
     }
 
     normalizePath (folderName) {
@@ -113,7 +110,6 @@ class ImageTransform {
             resize: false,
             count: 1, // 1 == to copy image
             copy: true,
-            canEncode: extension === 'png' || extension === 'jpg' || extension === 'jpeg' || extension === 'webp',
         };
 
         if (settings.dest) {
@@ -154,14 +150,13 @@ class ImageTransform {
             return null;
         }
     }
-
     getResizeSettings (fileSettings) {
         if (fileSettings) {
             const fileName = fileSettings.src;
             const relativeFileName = this.getRelativeSrcPath(fileName);
             const resizeConfig = this.config.resize;
 
-            if (resizeConfig && fileSettings.canEncode) {
+            if (resizeConfig) {
                 const fileResize = {};
                 let   willResize = false;
 
@@ -201,6 +196,7 @@ class ImageTransform {
                 fileSettings.complete = 0;
                 fileSettings.resolve = resolve;
                 fileSettings.output = [];
+                fileSettings.retries = 0;
 
                 this.processFile(fileSettings);
             } else {
@@ -300,8 +296,6 @@ class ImageTransform {
         this.imagePoolManager.getImagePool().then((imagePool) => {
             fileSettings.imagePoolUsed = true;
 
-            // Reuse image object
-            // const image = this.ingestCache[fileSettings.src] || (this.ingestCache[fileSettings.src] = imagePool.ingestImage(fileSettings.src));
             const image = imagePool.ingestImage(fileSettings.src);
 
             image.decoded.then(this.processDecoded.bind(this, image, fileSettings, fileNamePostfix), (err) => {
@@ -314,19 +308,12 @@ class ImageTransform {
         const fileSize = fileSettings.resize[fileNamePostfix];
         const encode = merge({}, fileSettings.encode);
 
-        // Restore bitmap
-        // decoded.bitmap = this.bitmapCache[fileSettings.src] || decoded.bitmap;
-        // console.log(fileSettings.src, decoded.bitmap.width, decoded.bitmap.height);
-
         // Resize image
         if (fileSize.width || fileSize.height || fileSize.multiplier) {
             const resize = getImageSize(decoded.bitmap, fileSize);
             const useCrop = resize[2];
 
             if (resize) {
-                // Save decoded bitmap to restore when processing next image size
-                // this.bitmapCache[fileSettings.src] = this.bitmapCache[fileSettings.src] || decoded.bitmap;
-
                 // squoosh doesn't have a crop / fitMethod implemented yet
                 // Using custom implementation
                 // @TODO Replace with squoosh built-in crop when it's ready
@@ -367,7 +354,15 @@ class ImageTransform {
                         height: useCrop ? resize[1] : null, // if we didn't cropped let squoosh calculate the height
                     }
                 }).then(this.processEncode.bind(this, image, encode, fileSettings, fileNamePostfix), (err) => {
-                    this.handleError(err);
+                    this.imagePoolManager.markComplete();
+
+                    if (++fileSettings.retries < 10) {
+                        // Restart file processing
+                        this.processIngest(fileSettings, fileNamePostfix);
+                    } else {
+                        this.handleError(new Error(`To many errors, skipping "${ fileSettings.src }"`));
+                        this.setFileComplete(fileSettings);
+                    }
                 });
             } else {
                 // Resize not needed, only converting format and/or optimizing
@@ -420,11 +415,18 @@ class ImageTransform {
                             });
                         }
                     });
+                }, (err) => {
+                    this.handleError(err);
                 });
             }
+        }, (err) => {
+            this.handleError(err);
+            this.setFileComplete(fileSettings);
+            this.imagePoolManager.markComplete();
         }).catch((err) => {
             this.handleError(err);
             this.setFileComplete(fileSettings);
+            this.imagePoolManager.markComplete();
         });
     }
 
@@ -432,9 +434,6 @@ class ImageTransform {
         fileSettings.complete++;
 
         if (fileSettings.complete >= fileSettings.count) {
-            // this.ingestCache[fileSettings.src] = null;
-            // this.bitmapCache[fileSettings.src] = null;
-
             fileSettings.resolve(fileSettings.output);
         }
     }
@@ -446,7 +445,7 @@ class ImageTransform {
      * @protected
      */
     handleError (err) {
-        console.error(err);
+        console.error(err.message);
     }
 }
 

@@ -11,7 +11,7 @@ class ImagePoolManager {
 
         this.cpuCount = config.cpuCount;
         this.parallelCount = config.parallelCount;
-        this.resetPoolAfter = config.resetPoolAfter || 30; // Reset poll after 30 images
+        this.resetPoolAfter = config.resetPoolAfter || 25; // Reset poll after 25 images
 
         this.imagePool = null;
         this.queue = [];
