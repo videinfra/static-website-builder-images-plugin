@@ -1,3 +1,7 @@
+function clamp (value, min, max) {
+    return value ? Math.min(Math.max(value, min || 0), max || Number.POSITIVE_INFINITY) : min || max;
+}
+
 /**
  * Returns size into which image will be resized
  * Calculates so that ratio is preserved, but image is only resized down, not up
@@ -14,44 +18,73 @@ module.exports = function getImageSize (bitmap, options = {}) {
             Math.ceil(bitmap.height * options.multiplier),
             false, // no crop
         ];
-    } else if (options.width || options.height) {
-        let ratio = null;
-        let newWidth = options.width;
-        let newHeight = options.height;
-        let crop = false
+    } else if (options.width || options.height || options.minWidth || options.minHeight || options.maxWidth || options.maxHeight) {
+        const ratio = bitmap.width / bitmap.height;
+        let width = null;
+        let height = null;
+        let minWidth = options.minWidth;
+        let maxWidth = options.maxWidth;
+        let minHeight = options.minHeight;
+        let maxHeight = options.maxHeight;
+        let crop = false;
 
-        if (newWidth && !newHeight) {
-            ratio = bitmap.width / bitmap.height;
-            newHeight = newWidth / ratio;
-        } else if (newHeight && !newWidth) {
-            ratio = bitmap.width / bitmap.height;
-            newWidth = newHeight * ratio;
-        } else {
-            ratio = options.width / options.height;
-            crop = true;
+        if (options.width) {
+            width = minWidth = maxWidth = options.width;
+            height = width / ratio;
+        }
+        if (options.height) {
+            height = minHeight = maxHeight = options.height;
+            width = newHeight * ratio;
         }
 
-        if (bitmap.width < newWidth || bitmap.height < newHeight) {
-            newWidth = bitmap.height * ratio;
-            newHeight = bitmap.height;
+        let newWidth = clamp(width, minWidth, maxWidth);
+        let newHeight = clamp(height, minHeight, maxHeight);
 
-            if (bitmap.width < newWidth) {
-                newWidth = bitmap.width;
-                newHeight = bitmap.width / ratio;
+        if (newWidth && newWidth !== width) {
+            width = newWidth;
+            height = width / ratio;
+
+            newHeight = clamp(height, minHeight, maxHeight);
+
+            if (newHeight && newHeight !== height) {
+                height = newHeight;
+                width = clamp(height * ratio, minWidth, maxWidth);
+            }
+        }
+        if (newHeight && newHeight !== height) {
+            height = newHeight;
+            width = height * ratio;
+
+            newWidth = clamp(width, minWidth, maxWidth);
+
+            if (newWidth && newWidth !== width) {
+                width = newWidth;
+                height = clamp(width / ratio, minHeight, maxHeight);
+            }
+        }
+
+        // Final adjustment, make sure output images is smaller than original
+        // preserve calculated ratio, but ignore min/max
+        const newRatio = width / height;
+
+        if (bitmap.width < width || bitmap.height < height) {
+            height = bitmap.height;
+            width = height * newRatio;
+
+            if (bitmap.width < width) {
+                width = bitmap.width;
+                height = width / newRatio;
             }
         }
 
         // Use crop if ratio has changed
-        if (crop) {
-            const newRatio = newWidth / newHeight;
-            if (newRatio.toFixed(5) !== ratio.toFixed(5)) {
-                crop = true
-            }
+        if (newRatio.toFixed(5) !== ratio.toFixed(5)) {
+            crop = true
         }
 
         return [
-            Math.floor(newWidth),
-            Math.floor(newHeight),
+            Math.floor(width),
+            Math.floor(height),
             crop,
         ];
     } else {

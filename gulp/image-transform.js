@@ -309,7 +309,7 @@ class ImageTransform {
         const encode = merge({}, fileSettings.encode);
 
         // Resize image
-        if (fileSize.width || fileSize.height || fileSize.multiplier) {
+        if (fileSize.width || fileSize.minWidth || fileSize.maxWidth || fileSize.height || fileSize.minHeight || fileSize.maxHeight || fileSize.multiplier) {
             const resize = getImageSize(decoded.bitmap, fileSize);
             const useCrop = resize[2];
 

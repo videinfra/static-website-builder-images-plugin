@@ -79,6 +79,12 @@ exports.imageSizes = {
 
             // resize to specific height; aspect ratio is preserved
             '@xl': { height: 500 },
+
+            // resize to at given width or height so that other dimension is larger than constraint; aspect ratio is preserved
+            '@xxl': { minWidth: 800, minHeight: 800 },
+
+            // resize to at given width or height so that other dimension is small than constraint; aspect ratio is preserved
+            '@xxl-small': { maxWidth: 800, maxHeight: 800 },
         },
     },
 
