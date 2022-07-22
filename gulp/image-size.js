@@ -34,7 +34,7 @@ module.exports = function getImageSize (bitmap, options = {}) {
         }
         if (options.height) {
             height = minHeight = maxHeight = options.height;
-            width = newHeight * ratio;
+            width = height * ratio;
         }
 
         let newWidth = clamp(width, minWidth, maxWidth);
