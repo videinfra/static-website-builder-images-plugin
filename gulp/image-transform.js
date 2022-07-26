@@ -334,15 +334,15 @@ class ImageTransform {
                     if (encode.oxipng) {
                         if (typeof fileSize.quality === 'number') {
                             encode.oxipng.quality = fileSize.quality;
-                        } else if (fileSize.quality && fileSize.quality.webp) {
-                            encode.oxipng.quality = fileSize.quality.webp;
+                        } else if (fileSize.quality && fileSize.quality.png) {
+                            encode.oxipng.quality = fileSize.quality.png;
                         }
                     }
                     if (encode.mozjpeg) {
                         if (typeof fileSize.quality === 'number') {
                             encode.mozjpeg.quality = fileSize.quality;
-                        } else if (fileSize.quality && fileSize.quality.webp) {
-                            encode.mozjpeg.quality = fileSize.quality.webp;
+                        } else if (fileSize.quality && fileSize.quality.jpg) {
+                            encode.mozjpeg.quality = fileSize.quality.jpg;
                         }
                     }
                 }
