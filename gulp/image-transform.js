@@ -156,7 +156,8 @@ class ImageTransform {
             const relativeFileName = this.getRelativeSrcPath(fileName);
             const resizeConfig = this.config.resize;
 
-            if (resizeConfig) {
+            // If there is configuration and resize is supported for this file, eg. it's not SVG
+            if (resizeConfig && fileSettings.resize) {
                 const fileResize = {};
                 let   willResize = false;
 

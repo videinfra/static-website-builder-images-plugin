@@ -1,6 +1,6 @@
 {
   "name": "@videinfra/static-website-builder-images-plugin",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Image resize and format converted",
   "license": "MIT",
   "engines": {
