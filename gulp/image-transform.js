@@ -300,6 +300,10 @@ class ImageTransform {
 
             image.decoded.then(this.processDecoded.bind(this, image, fileSettings, fileNamePostfix), (err) => {
                 this.handleError(err);
+
+                // Problems decoding image, skip
+                this.imagePoolManager.markComplete();
+                this.setFileComplete(fileSettings);
             });
         });
     }
@@ -360,7 +364,7 @@ class ImageTransform {
                         // Restart file processing
                         this.processIngest(fileSettings, fileNamePostfix);
                     } else {
-                        this.handleError(new Error(`To many errors, skipping "${ fileSettings.src }"`));
+                        this.handleError(new Error(`To many errors, skipping "${ fileSettings.src }"`), false);
                         this.setFileComplete(fileSettings);
                     }
                 });
@@ -442,10 +446,15 @@ class ImageTransform {
      * Handle error by outputing to console
      *
      * @param {object} err Error
+     * @param {boolean} simplified Output only error message text
      * @protected
      */
-    handleError (err) {
-        console.error(err.message);
+    handleError (err, simplified) {
+        if (simplified && err.message) {
+            console.error(err.message);
+        } else {
+            console.error(err);
+        }
     }
 }
 
