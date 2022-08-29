@@ -23,15 +23,17 @@ class ImageTransform {
             },
             resize: config.resize || false,
             skipExisting: config.skipExisting || false,
-            poolSize: config.poolSize || null,
 
             src: config.src || null,
             dest: config.dest || null,
         };
 
+        const poolConfig = config.pool || {};
+        
         this.imagePoolManager = new ImagePoolManager({
-            cpuCount: cpuCount,
-            parallelCount: cpuCount,
+            cpuCount: poolConfig.maxCPUCores || cpuCount,
+            parallelCount: poolConfig.maxCPUCores || cpuCount,
+            resetPoolAfter: poolConfig.resetPoolAfter,
             onReset: this.resetIngestCache.bind(this)
         });
 

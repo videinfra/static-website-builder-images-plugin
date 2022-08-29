@@ -30,8 +30,8 @@ function imageSizes () {
         dest: getPaths.getDestPath('imageSizes'),
         optimization: getConfig.getTaskConfig('imageSizes', 'optimization'),
         resize: getConfig.getTaskConfig('imageSizes', 'resize'),
-        cpuCount: getConfig.getTaskConfig('imageSizes', 'cpuCount'),
         skipExisting: getConfig.getTaskConfig('imageSizes', 'skipExisting'),
+        pool: getConfig.getTaskConfig('imageSizes', 'pool'),
     };
 
     return gulp

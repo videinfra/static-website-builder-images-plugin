@@ -97,6 +97,16 @@ exports.imageSizes = {
         // Skip if image already exists in destination folder
         skipExisting: true,
     },
+
+    // Pool settings
+    pool: {
+        // Max CPU core usage, by default half of all cores
+        maxCPUCores: null,
+
+        // Reset pool after number of images, default is 25
+        // Helps if there are memory leaks
+        resetPoolAfter: 25,
+    }
 }
 ```
 
