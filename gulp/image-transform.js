@@ -31,8 +31,8 @@ class ImageTransform {
         const poolConfig = config.pool || {};
         
         this.imagePoolManager = new ImagePoolManager({
-            cpuCount: poolConfig.maxCPUCores || cpuCount,
-            parallelCount: poolConfig.maxCPUCores || cpuCount,
+            cpuCount: Math.min(poolConfig.maxCPUCores || cpuCount, cpuCount),
+            parallelCount: Math.min(poolConfig.maxCPUCores || cpuCount, cpuCount),
             resetPoolAfter: poolConfig.resetPoolAfter,
             onReset: this.resetIngestCache.bind(this)
         });
