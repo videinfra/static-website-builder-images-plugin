@@ -11,6 +11,7 @@
 - [x] Converts jpg and png images into webp format
 - [x] Optimize images
 - [x] Resize and crop images
+- [x] Regenerate only images which have changed
 
 ## Installing
 
@@ -29,7 +30,7 @@ exports.plugins = [
 ## Configuration
 
 Optional.  
-In the config file (eg. `config/config.js`) add:
+In the config file (eg. `config/config.js`) overwrite default settings:
 
 ```js
 exports.imageSizes = {
@@ -38,11 +39,11 @@ exports.imageSizes = {
     ignore: [
     ],
 
-    // Image file extensions
-    extensions: ['jpg', 'png', 'webp', 'gif', 'pdf', 'svg'],
+    // Image file extensions, these are defaults
+    extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'svg', 'avif', 'tiff'],
 
     // Optimization settings + format conversion
-    // Default is `false`, images won't be converted into WEBP and won't be optimized
+    // Default is `false`, images won't be converted into WEBP, won't be optimized and won't be resized
     optimization: {
         // Converting from PNG or JPG into WEBP + optimize
         webp: {
@@ -62,6 +63,7 @@ exports.imageSizes = {
 
     // Resize settings
     // Default is `false`, images won't be resized
+    // 'optimization' must be enabled for resize to work
     resize: {
         // glob: { config }
         '/media/test/*.*': {
@@ -70,9 +72,8 @@ exports.imageSizes = {
             // resize to specific size, crop if aspect ratio changes
             '@xs': { width: 100, height: 100 },
 
-            // resize to specific size, when croping uses 'position' as a center point around which
-            // to crop the image: [0.5, 0.5] == center (default), [0, 0] == left top corner
-            '@md': { width: 100, height: 100, position: [0.5, 0.5] },
+            // resize to specific width; aspect ratio is preserved
+            '@md': { width: 200, height: 200 },
 
             // resize to specific width; aspect ratio is preserved
             '@lg': { width: 300 },
@@ -88,25 +89,18 @@ exports.imageSizes = {
         },
     },
 
+    // File name of the JSON file which will be used to cache information about
+    // generated images, it's used to re-generate only images which changed.
+    // This is default value
+    cacheFileName: 'cache.json',
+
     // Production only settings, overwrites default settings
     production: {
     },
 
     // Development only settings, overwrites default settings
     development: {
-        // Skip if image already exists in destination folder
-        skipExisting: true,
     },
-
-    // Pool settings
-    pool: {
-        // Max CPU core usage, by default half of all cores
-        maxCPUCores: null,
-
-        // Reset pool after number of images, default is 25
-        // Helps if there are memory leaks
-        resetPoolAfter: 25,
-    }
 }
 ```
 

@@ -79,7 +79,7 @@ module.exports = function getImageSize (bitmap, options = {}) {
 
         // Use crop if ratio has changed
         if (newRatio.toFixed(5) !== ratio.toFixed(5)) {
-            crop = true
+            crop = true;
         }
 
         return [

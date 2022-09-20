@@ -1,10 +1,10 @@
 {
   "name": "@videinfra/static-website-builder-images-plugin",
-  "version": "2.4.1",
+  "version": "3.0.0",
   "description": "Image resize and format converted",
   "license": "MIT",
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=14.15.0"
   },
   "bugs": {
     "url": "https://github.com/videinfra/static-website-builder-images-plugin/issues"
@@ -15,6 +15,6 @@
   },
   "author": "Vide Infra",
   "dependencies": {
-    "@squoosh/lib": "^0.4.0"
+    "sharp": "^0.31.0"
   }
 }

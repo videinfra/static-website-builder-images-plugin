@@ -1,3 +1,4 @@
+// Disable regular 'images' plugin
 exports.images = false;
 
 exports.imageSizes = {
@@ -7,7 +8,7 @@ exports.imageSizes = {
     ],
 
     // Image file extensions
-    extensions: ['jpg', 'png', 'webp', 'gif', 'pdf', 'svg'],
+    extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'svg', 'avif', 'tiff'],
 
     // Optimization settings + format conversion
     optimization: false,
@@ -40,24 +41,18 @@ exports.imageSizes = {
 
     // Development only settings, overwrites default settings
     development: {
-        // Skip if image already exists in destination folder
-        skipExisting: true,
-    },
-
-    // Pool settings
-    pool: {
-        // Max CPU core usage, by default half of all cores
-        maxCPUCores: null,
-
-        // Reset pool after number of images, default is 25
-        // Helps if there are memory leaks
-        resetPoolAfter: 25,
     }
 };
 
 exports.tasks = {
     imageSizes: [
         require('./task'),
+    ]
+};
+
+exports.preprocess = {
+    clean: [
+        require('./preprocess-config'),
     ]
 };
 

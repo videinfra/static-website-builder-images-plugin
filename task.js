@@ -1,6 +1,6 @@
 const gulp = require('gulp');
 const memoize = require('nano-memoize');
-const gulpTask = require('./gulp/index');
+const gulpTask = require('./gulp/task');
 
 const globs = require('@videinfra/static-website-builder/lib/globs-helper');
 const getPaths = require('@videinfra/static-website-builder/lib/get-path');
@@ -25,16 +25,13 @@ const getGlobPaths = memoize(function () {
 
 
 function imageSizes () {
-    const taskConfig = {
+    const taskConfig = Object.assign({}, getConfig.getTaskConfig('imageSizes'), {
         src: getPaths.getSourcePaths('imageSizes'),
         dest: getPaths.getDestPath('imageSizes'),
-        optimization: getConfig.getTaskConfig('imageSizes', 'optimization'),
-        resize: getConfig.getTaskConfig('imageSizes', 'resize'),
-        skipExisting: getConfig.getTaskConfig('imageSizes', 'skipExisting'),
-        pool: getConfig.getTaskConfig('imageSizes', 'pool'),
-    };
+    });
 
     return gulp
+        // Don't actually read file, that's done by image plugin
         .src(getGlobPaths(), { read: false })
         .pipe(taskStart())
 
