@@ -72,8 +72,9 @@ exports.imageSizes = {
             // resize to specific size, crop if aspect ratio changes
             '@xs': { width: 100, height: 100 },
 
-            // resize to specific width; aspect ratio is preserved
-            '@md': { width: 200, height: 200 },
+            // resize to specific size, when croping uses 'position' as a center point around which
+            // to crop the image: [x, y], eg. [0.5, 0.5] == center (default), [0, 0] == left top corner, [1, 1] == right bottom corner
+            '@md': { width: 100, height: 100, position: [0.5, 0.5] },
 
             // resize to specific width; aspect ratio is preserved
             '@lg': { width: 300 },

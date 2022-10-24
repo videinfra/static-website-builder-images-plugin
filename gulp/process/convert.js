@@ -1,5 +1,6 @@
 const path = require('path');
 const sharp = require('sharp');
+const getImagePosition = require('../util/get-image-position');
 const getImageSize = require('../util/get-image-size');
 const fsPromises = require('fs').promises;
 
@@ -113,6 +114,7 @@ class ConvertProcessing {
      */
     convert (next, stream) {
         const resize = next.node.resize ? getImageSize(stream.metadata, next.node.resize) : null;
+        const position = resize ? getImagePosition(stream.metadata, resize, next.node.resize) : null;
         const encode = next.node.encode;
 
         // Get list of all formats into which we need to convert
@@ -127,6 +129,11 @@ class ConvertProcessing {
         let converted = stream.image.clone();
 
         if (resize) {
+            if (position) {
+                // Crop
+                converted = converted.extract(position);
+            }
+
             converted = converted.resize({
                 width: resize[0],
                 height: resize[1],
