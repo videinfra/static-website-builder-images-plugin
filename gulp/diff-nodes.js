@@ -44,6 +44,16 @@ function getRelativeFileName (fileName, config) {
 }
 
 /**
+ * Remove file extension
+ * 
+ * @param {string} fileName File name
+ * @returns {string} File name without extension
+ */
+function removeFileExtension (fileName) {
+    return fileName.replace(/\.[^.\/\\]*?$/, '');
+}
+
+/**
  * Returns encoding quality
  *
  * @param {object} optimization Optimization settings
@@ -82,7 +92,7 @@ function getEncodeOption (optimization, quality, format) {
  */
 function getSizes (fileName, config) {
     const relativeFileName = getRelativeFileName(fileName, config);
-    const relativeFileNameNoExtension = relativeFileName.replace(/\..*?$/, '');
+    const relativeFileNameNoExtension = removeFileExtension(relativeFileName);
     const extension = getExtension(fileName);
     const sizeNodes = [];
 
