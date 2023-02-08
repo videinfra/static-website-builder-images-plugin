@@ -185,7 +185,7 @@ module.exports = function generateDiffNodes (fileName, config) {
         return Promise.resolve([
             {
                 sourceFileName: fileName,
-                sourceHash: null,
+                sourceHash: getFileHash(fileName),
                 targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
                 resize: false,
                 encode: false,
