@@ -26,7 +26,7 @@ module.exports = function getImagePosition (size, options = {}) {
             extract: {
                 left: Math.floor(x),
                 top: Math.floor(y),
-                width: size.cropHeight,
+                width: size.cropWidth,
                 height: size.cropHeight,
             }
         };

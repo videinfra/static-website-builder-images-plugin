@@ -142,8 +142,8 @@ class ConvertProcessing {
                 converted = converted.extract(position.extract);
             } else {
                 converted = converted.resize({
-                    width: resize.width,
-                    height: resize.height,
+                    width: resize.cropWidth,
+                    height: resize.cropHeight,
                     fit: sharp.fit.cover,
                     withoutEnlargement: true
                 });
