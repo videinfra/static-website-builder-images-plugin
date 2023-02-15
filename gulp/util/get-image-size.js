@@ -13,11 +13,16 @@ function clamp (value, min, max) {
  */
 module.exports = function getImageSize (bitmap, options = {}) {
     if (options.multiplier) {
-        return [
-            Math.ceil(bitmap.width * options.multiplier),
-            Math.ceil(bitmap.height * options.multiplier),
-            false, // no crop
-        ];
+        const width = Math.ceil(bitmap.width * options.multiplier);
+        const height = Math.ceil(bitmap.height * options.multiplier),
+
+        return {
+            width: width,
+            height: height,
+            cropWidth: width,
+            cropHeight: height,
+            crop: false,
+        };
     } else if (options.width || options.height || options.minWidth || options.minHeight || options.maxWidth || options.maxHeight) {
         const ratio = bitmap.width / bitmap.height;
         let width = null;
@@ -27,6 +32,8 @@ module.exports = function getImageSize (bitmap, options = {}) {
         let minHeight = options.minHeight;
         let maxHeight = options.maxHeight;
         let crop = false;
+        let cropWidth = 0;
+        let cropHeight = 0;
 
         if (options.width) {
             width = minWidth = maxWidth = options.width;
@@ -78,15 +85,29 @@ module.exports = function getImageSize (bitmap, options = {}) {
         }
 
         // Use crop if ratio has changed
+        cropWidth = width;
+        cropHeight = height;
+
         if (newRatio.toFixed(5) !== ratio.toFixed(5)) {
             crop = true;
+
+            const widthMultiplier = bitmap.width / width;
+            const heightMultiplier = bitmap.height / height;
+
+            if (widthMultiplier < heightMultiplier) {
+                height = width / ratio;
+            } else {
+                width = height * ratio;
+            }
         }
 
-        return [
-            Math.floor(width),
-            Math.floor(height),
-            crop,
-        ];
+        return {
+            width: Math.floor(width),
+            height: Math.floor(height),
+            cropWidth: Math.floor(cropWidth),
+            cropHeight: Math.floor(cropHeight),
+            crop: crop,
+        };
     } else {
         return null;
     }

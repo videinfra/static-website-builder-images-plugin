@@ -114,7 +114,7 @@ class ConvertProcessing {
      */
     convert (next, stream) {
         const resize = next.node.resize ? getImageSize(stream.metadata, next.node.resize) : null;
-        const position = resize ? getImagePosition(stream.metadata, resize, next.node.resize) : null;
+        const position = resize ? getImagePosition(resize, next.node.resize) : null;
         const encode = next.node.encode;
 
         // Get list of all formats into which we need to convert
@@ -130,16 +130,24 @@ class ConvertProcessing {
 
         if (resize) {
             if (position) {
-                // Crop
-                converted = converted.extract(position);
-            }
+                // Resize
+                converted = converted.resize({
+                    width: position.resize.width,
+                    height: position.resize.height,
+                    fit: sharp.fit.cover,
+                    withoutEnlargement: true
+                });
 
-            converted = converted.resize({
-                width: resize[0],
-                height: resize[1],
-                fit: sharp.fit.cover,
-                withoutEnlargement: true
-            });
+                // Crop after resizing
+                converted = converted.extract(position.extract);
+            } else {
+                converted = converted.resize({
+                    width: resize.width,
+                    height: resize.height,
+                    fit: sharp.fit.cover,
+                    withoutEnlargement: true
+                });
+            }
         }
 
         const nextFormat = () => {

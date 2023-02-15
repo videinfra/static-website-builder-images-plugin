@@ -45,7 +45,7 @@ function getRelativeFileName (fileName, config) {
 
 /**
  * Remove file extension
- * 
+ *
  * @param {string} fileName File name
  * @returns {string} File name without extension
  */
@@ -182,16 +182,28 @@ module.exports = function generateDiffNodes (fileName, config) {
             });
     } else {
         // All other files needs to be just copied
-        return Promise.resolve([
-            {
-                sourceFileName: fileName,
-                sourceHash: getFileHash(fileName),
-                targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
-                resize: false,
-                encode: false,
-                copy: true,
-                count: 1,
-            }
-        ]);
+        return getFileHash(fileName)
+            .then((hash) => {
+                return [{
+                    sourceFileName: fileName,
+                    sourceHash: hash,
+                    targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
+                    resize: false,
+                    encode: false,
+                    copy: true,
+                    count: 1,
+                }];
+            })
+            .catch(() => {
+                return [{
+                    sourceFileName: fileName,
+                    sourceHash: null,
+                    targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
+                    resize: false,
+                    encode: false,
+                    copy: true,
+                    count: 1,
+                }];
+            });
     }
 };
