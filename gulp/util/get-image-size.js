@@ -14,7 +14,7 @@ function clamp (value, min, max) {
 module.exports = function getImageSize (bitmap, options = {}) {
     if (options.multiplier) {
         const width = Math.ceil(bitmap.width * options.multiplier);
-        const height = Math.ceil(bitmap.height * options.multiplier),
+        const height = Math.ceil(bitmap.height * options.multiplier);
 
         return {
             width: width,
