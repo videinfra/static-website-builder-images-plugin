@@ -110,6 +110,7 @@ function getSizes (fileName, config) {
                 // Quality goes into 'encode' settings
                 const encode = {
                     webp: getEncodeOption(config.optimization, quality, 'webp'),
+                    avif: getEncodeOption(config.optimization, quality, 'avif'),
                     png: extension === 'png' ? getEncodeOption(config.optimization, quality, 'png') : false,
                     jpg: extension === 'jpg' ? getEncodeOption(config.optimization, quality, 'jpg') : false,
                 };
@@ -129,6 +130,7 @@ function getSizes (fileName, config) {
     if (!sizeNodes.length) {
         const encode = {
             webp: config.optimization.webp && config.optimization.webp.quality || false,
+            avif: config.optimization.avif && config.optimization.avif.quality || false,
             png: extension === 'png' ? config.optimization.png && config.optimization.png.quality || false : false,
             jpg: extension === 'jpg' ? config.optimization.jpg && config.optimization.jpg.quality || false : false,
         };
@@ -144,7 +146,7 @@ function getSizes (fileName, config) {
 
     // Filter out sizes which doesn't have any encode options and is not 'copy'
     return sizeNodes.filter((node) => {
-        return !!(node.copy || node.encode.webp || node.encode.png || node.encode.jpg);
+        return !!(node.copy || node.encode.webp || node.encode.avif || node.encode.png || node.encode.jpg);
     });
 }
 
@@ -160,7 +162,7 @@ module.exports = function generateDiffNodes (fileName, config) {
     const extension = getExtension(fileName);
 
     // Only specific file formats can be converted
-    if (extension === 'jpg' || extension === 'png' || extension === 'webp') {
+    if (extension === 'jpg' || extension === 'png' || extension === 'webp' || extension === 'avif') {
         const sizes = getSizes (fileName, config);
 
         return getFileHash(fileName)

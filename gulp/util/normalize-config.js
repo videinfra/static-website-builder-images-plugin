@@ -21,6 +21,7 @@ module.exports = function normalizeConfig (config) {
         resize: config.resize || false,
         cacheFileName: config.cacheFileName,
         optimization: {
+            avif: config.optimization ? config.optimization.avif : false,
             webp: config.optimization ? config.optimization.webp : false,
             png: config.optimization ? config.optimization.png : false,
             jpg: config.optimization ? config.optimization.jpg : false,
@@ -30,6 +31,9 @@ module.exports = function normalizeConfig (config) {
     // Normalize optimization quality
     const optimization = config.optimization;
 
+    if (optimization.avif && !optimization.avif.quality) {
+        optimization.avif.quality = 100;
+    }
     if (optimization.webp && !optimization.webp.quality) {
         optimization.webp.quality = 100;
     }
@@ -52,6 +56,7 @@ module.exports = function normalizeConfig (config) {
                 // Process only if there are properties for resize
                 if (option && (option.width || option.height || option.minWidth || option.minHeight || option.maxWidth || option.maxHeight || option.multiplier)) {
                     option.quality = {
+                        avif: getQuality(option, optimization, 'avif'),
                         webp: getQuality(option, optimization, 'webp'),
                         png: getQuality(option, optimization, 'png'),
                         jpg: getQuality(option, optimization, 'jpg'),

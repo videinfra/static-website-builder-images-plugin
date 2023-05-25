@@ -8,7 +8,7 @@
 
 ## Features
 
-- [x] Converts jpg and png images into webp format
+- [x] Converts jpg, png, webp and avig images into webp and avif format
 - [x] Optimize images
 - [x] Resize and crop images
 - [x] Regenerate only images which have changed
@@ -45,8 +45,13 @@ exports.imageSizes = {
     // Optimization settings + format conversion
     // Default is `false`, images won't be converted into WEBP, won't be optimized and won't be resized
     optimization: {
-        // Converting from PNG or JPG into WEBP + optimize
+        // Converting from PNG, JPG or AVIF into WEBP + optimize
         webp: {
+            quality: 89
+        },
+
+        // Converting from PNG, JPG or WEBP into AVIF + optimize
+        avif: {
             quality: 89
         },
 

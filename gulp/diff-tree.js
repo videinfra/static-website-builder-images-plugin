@@ -12,7 +12,7 @@ const find = require('lodash/find');
 //     targetFileName: '',
 //
 //     // Encoding and resize options
-//     encode: { png: { quality: 70 }, jpg: { quality: 70 }, webp: { quality: 70 }},
+//     encode: { png: { quality: 70 }, jpg: { quality: 70 }, webp: { quality: 70 }, avif: { quality: 70 }},
 //     resize: { width: 700, minHeight: 400, maxHeight: 600 },
 // }
 
