@@ -1,6 +1,7 @@
 const gulp = require('gulp');
-const memoize = require('nano-memoize');
 const gulpTask = require('./gulp/task');
+const nanomemoize = require('nano-memoize');
+const memoize = typeof nanomemoize === 'function' ? nanomemoize : nanomemoize.default;
 
 const globs = require('@videinfra/static-website-builder/lib/globs-helper');
 const getPaths = require('@videinfra/static-website-builder/lib/get-path');
