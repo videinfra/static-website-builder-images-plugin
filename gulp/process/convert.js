@@ -117,6 +117,9 @@ class ConvertProcessing {
         const position = resize ? getImagePosition(resize, next.node.resize) : null;
         const encode = next.node.encode;
 
+        // Save original size into node data (cache)
+        next.node.sourceSize = { width: stream.metadata.width, height: stream.metadata.width };
+
         // Get list of all formats into which we need to convert
         const formats = encode ? Object.keys(encode).filter((name) => !!encode[name]) : [];
 
