@@ -118,7 +118,7 @@ class ConvertProcessing {
         const encode = next.node.encode;
 
         // Save original size into node data (cache)
-        // next.node.sourceSize = { width: stream.metadata.width, height: stream.metadata.width };
+        next.node.sourceSize = { width: stream.metadata.width, height: stream.metadata.width };
 
         // Get list of all formats into which we need to convert
         const formats = encode ? Object.keys(encode).filter((name) => !!encode[name]) : [];

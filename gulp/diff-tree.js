@@ -110,6 +110,14 @@ class DiffTree {
                 const oldNodes = this.tree.filter((node) => node.sourceFileName === sourceFileName);
                 const newNodes = nodes.filter((node) => node.sourceFileName === sourceFileName);
 
+                // Add to newNodes same sourceSize as for oldNodes
+                if (oldNodes.length && 'sourceSize' in oldNodes[0]) {
+                    newNodes.forEach((node) => {
+                        node.sourceSize = oldNodes[0].sourceSize;
+                    });
+                }
+
+                // Find nodes which needs to be added or removed
                 const addNodes = newNodes.filter((node) => {
                     return !find(oldNodes, node);
                 });
