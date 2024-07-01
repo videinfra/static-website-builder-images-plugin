@@ -11,7 +11,6 @@ class ConvertProcessing {
     constructor () {
         this.streams = {};
         this.queue = [];
-        this.processing = 0;
     }
 
     /**
@@ -44,9 +43,13 @@ class ConvertProcessing {
         if (next) {
             next.processing = true;
 
-            this.getStream(next.node.sourceFileName).then((stream) => {
-                this.convert(next, stream);
-            });
+            this.getStream(next.node.sourceFileName)
+                .then((stream) => {
+                    this.convert(next, stream);
+                })
+                .catch((err) => {
+                    next.reject(err);
+                });
         }
     }
 
@@ -172,6 +175,7 @@ class ConvertProcessing {
                                 nextFormat();
                             });
                 } else {
+                    // sharp doesn't support specified format
                     nextFormat();
                 }
             } else {
@@ -184,7 +188,9 @@ class ConvertProcessing {
 
         this.createFolder(next.node.targetFileName)
             .then(nextFormat)
-            .catch(next.reject);
+            .catch(() => {
+                next.reject();
+            });
     }
 
     /**
