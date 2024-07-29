@@ -1,6 +1,7 @@
 const path = require('path');
 const minimatch = require('minimatch');
 const getFileHash = require('./util/get-file-hash');
+const { getQuality, qualityFallback } = require('./util/get-quality');
 
 function getExtension (fileName) {
     const extension = path.extname(fileName).replace(/^\./, '').toLowerCase();
@@ -54,36 +55,6 @@ function removeFileExtension (fileName) {
 }
 
 /**
- * Returns encoding quality
- *
- * @param {object} optimization Optimization settings
- * @param {object|number|undefined} quality Image size specific quality settings
- * @param {string} format File format
- * @returns {number|false} Encoding quality
- */
-function getEncodeOption (optimization, quality, format) {
-    let encodeQuality = false;
-
-    if (quality && quality[format]) {
-        // Quality is specific to format, eg `quality: { webp: 90 }`
-        encodeQuality = quality[format];
-    } else if (optimization[format] && optimization[format].quality) {
-        if (quality && typeof quality === 'number') {
-            // Quality is not specific to format, eg `quality: 90`
-            // Apply only if optimization settings have webp
-            encodeQuality = quality;
-        } else {
-            encodeQuality = optimization[format].quality;
-        }
-    }
-
-    // Returns as { quality: ... }
-    return encodeQuality ? {
-        quality: encodeQuality
-    } : false;
-}
-
-/**
  * Returns list of nodes where each node is for one specific size
  *
  * @param {string} fileName Input file name
@@ -95,6 +66,27 @@ function getSizes (fileName, config) {
     const relativeFileNameNoExtension = removeFileExtension(relativeFileName);
     const extension = getExtension(fileName);
     const sizeNodes = [];
+
+    for (let pattern in config.convert) {
+        if (minimatch(relativeFileName, pattern)) {
+            const quality = config.convert[pattern];
+
+            const encode = {
+                webp: qualityFallback(getQuality(quality, 'webp'), config.optimization, 'webp'),
+                avif: qualityFallback(getQuality(quality, 'avif'), config.optimization, 'avif'),
+                png: qualityFallback(getQuality(quality, 'png'), config.optimization, 'png'),
+                jpg: qualityFallback(getQuality(quality, 'jpg'), config.optimization, 'jpg'),
+            };
+
+            sizeNodes.push({
+                targetFileName: path.join(config.dest, relativeFileNameNoExtension),
+                resize: false,
+                encode: encode,
+                copy: false,
+                count: Object.keys(encode).filter((name) => !!encode[name]).length,
+            });
+        }
+    }
 
     for (let pattern in config.resize) {
         if (minimatch(relativeFileName, pattern)) {
@@ -109,10 +101,10 @@ function getSizes (fileName, config) {
 
                 // Quality goes into 'encode' settings
                 const encode = {
-                    webp: getEncodeOption(config.optimization, quality, 'webp'),
-                    avif: getEncodeOption(config.optimization, quality, 'avif'),
-                    png: extension === 'png' ? getEncodeOption(config.optimization, quality, 'png') : false,
-                    jpg: extension === 'jpg' ? getEncodeOption(config.optimization, quality, 'jpg') : false,
+                    webp: qualityFallback(getQuality(quality, 'webp'), config.optimization, 'webp'),
+                    avif: qualityFallback(getQuality(quality, 'avif'), config.optimization, 'avif'),
+                    png: qualityFallback(getQuality(quality, 'png'), config.optimization, 'png'),
+                    jpg: qualityFallback(getQuality(quality, 'jpg'), config.optimization, 'jpg'),
                 };
 
                 sizeNodes.push({
@@ -129,10 +121,10 @@ function getSizes (fileName, config) {
     // There are no sizes, only optimize the image and convert formats
     if (!sizeNodes.length) {
         const encode = {
-            webp: config.optimization.webp && config.optimization.webp.quality || false,
-            avif: config.optimization.avif && config.optimization.avif.quality || false,
-            png: extension === 'png' ? config.optimization.png && config.optimization.png.quality || false : false,
-            jpg: extension === 'jpg' ? config.optimization.jpg && config.optimization.jpg.quality || false : false,
+            webp: getQuality(config.optimization, 'webp') || false,
+            avif: getQuality(config.optimization, 'avif') || false,
+            png: extension === 'png' ? getQuality(config.optimization, 'png') || false : false,
+            jpg: extension === 'jpg' ? getQuality(config.optimization, 'jpg') || false : false,
         };
 
         sizeNodes.push({

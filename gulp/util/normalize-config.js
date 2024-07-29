@@ -1,47 +1,32 @@
-function getQuality (option, optimization, format) {
-    if ('quality' in option) {
-        if (typeof option.quality === 'number') {
-            return option.quality;
-        } else if (format in option.quality) {
-            return option.quality[format];
-        }
-    }
-
-    if (optimization[format]) {
-        return optimization[format].quality || false;
-    }
-
-    return false;
-}
+const { getQuality, qualityFallback } = require('./get-quality');
 
 module.exports = function normalizeConfig (config) {
     config = {
         src: config.src,
         dest: config.dest,
         resize: config.resize || false,
+        convert: config.convert || false,
         cacheFileName: config.cacheFileName,
         optimization: {
-            avif: config.optimization ? config.optimization.avif : false,
-            webp: config.optimization ? config.optimization.webp : false,
-            png: config.optimization ? config.optimization.png : false,
-            jpg: config.optimization ? config.optimization.jpg : false,
+            avif: getQuality(config.optimization, 'avif') || false,
+            webp: getQuality(config.optimization, 'webp') || false,
+            png: getQuality(config.optimization, 'png') || false,
+            jpg: getQuality(config.optimization, 'jpg') || false,
         }
     };
 
-    // Normalize optimization quality
-    const optimization = config.optimization;
+    if (config.convert) {
+        const convert = config.convert;
 
-    if (optimization.avif && !optimization.avif.quality) {
-        optimization.avif.quality = 100;
-    }
-    if (optimization.webp && !optimization.webp.quality) {
-        optimization.webp.quality = 100;
-    }
-    if (optimization.png && !optimization.png.quality) {
-        optimization.png.quality = 100;
-    }
-    if (optimization.jpg && !optimization.jpg.quality) {
-        optimization.jpg.quality = 100;
+        for (let glob in convert) {
+            const option = convert[glob];
+
+            // Process only if there are properties for encoding
+            option.avif = qualityFallback(getQuality(option, 'avif'), config.optimization, 'avif');
+            option.webp = qualityFallback(getQuality(option, 'webp'), config.optimization, 'webp');
+            option.png = qualityFallback(getQuality(option, 'png'), config.optimization, 'png');
+            option.jpg = qualityFallback(getQuality(option, 'jpg'), config.optimization, 'jpg');
+        }
     }
 
     if (config.resize) {
@@ -56,10 +41,10 @@ module.exports = function normalizeConfig (config) {
                 // Process only if there are properties for resize
                 if (option && (option.width || option.height || option.minWidth || option.minHeight || option.maxWidth || option.maxHeight || option.multiplier)) {
                     option.quality = {
-                        avif: getQuality(option, optimization, 'avif'),
-                        webp: getQuality(option, optimization, 'webp'),
-                        png: getQuality(option, optimization, 'png'),
-                        jpg: getQuality(option, optimization, 'jpg'),
+                        avif: qualityFallback(getQuality(option, 'avif'), config.optimization, 'avif'),
+                        webp: qualityFallback(getQuality(option, 'webp'), config.optimization, 'webp'),
+                        png: qualityFallback(getQuality(option, 'png'), config.optimization, 'png'),
+                        jpg: qualityFallback(getQuality(option, 'jpg'), config.optimization, 'jpg'),
                     };
                 } else {
                     delete(file[postfix]);
