@@ -163,7 +163,15 @@ class ConvertProcessing {
                 const formatFunctionName = format === 'jpg' ? 'jpeg' : format;
 
                 if (formatFunctionName in converted) {
-                    converted = converted[formatFunctionName]({ quality: encode[format].quality, effort: encode[format].effort || 4 });
+                    const encodeOptions = {
+                        quality: encode[format].quality,
+                    };
+
+                    if (encode[format].effort || encode[format].effort === 0) {
+                        encodeOptions.effort = encode[format].effort;
+                    }
+
+                    converted = converted[formatFunctionName](encodeOptions);
                     converted
                         .toFile(outputFileName)
                             .then(() => {

@@ -90,7 +90,7 @@ function getSizes (fileName, config) {
                 } : false,
                 jpg: jpg ? {
                     quality: jpg,
-                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'jpg', false), config.optimization, 'effort', 'jpg', false),
+                    effort: false,
                 } : false,
             };
 
@@ -138,7 +138,7 @@ function getSizes (fileName, config) {
                     } : false,
                     jpg: jpg ? {
                         quality: jpg,
-                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'jpg'), config.optimization, 'effort', 'jpg', false),
+                        effort: false,
                     } : false,
                 };
 
@@ -175,7 +175,7 @@ function getSizes (fileName, config) {
             } : false,
             jpg: jpg ? {
                 quality: jpg,
-                effort: getOptionProperty(config.optimization, 'effort', 'jpg', false) || false,
+                effort: false,
             } : false,
         };
 

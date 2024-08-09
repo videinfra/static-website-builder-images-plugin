@@ -23,11 +23,11 @@ module.exports = function normalizeConfig (config) {
             },
             png: {
                 quality: png,
-                effort: png ? getOptionProperty(config.optimization, 'effort', 'png', false) || 4 : false,
+                effort: png ? getOptionProperty(config.optimization, 'effort', 'png', false) || 7 : false,
             },
             jpg: {
                 quality: jpg,
-                effort: jpg ? getOptionProperty(config.optimization, 'effort', 'jpg', false) || 4 : false,
+                effort: false,
             },
         }
     };
@@ -65,7 +65,7 @@ module.exports = function normalizeConfig (config) {
             if (jpg) {
                 option.jpg = {
                     quality: jpg,
-                    effort: getOptionFallback(getOptionProperty(option, 'effort', 'jpg', false), config.optimization, 'effort', 'jpg', false),
+                    effort: false,
                 };
             }
         }
@@ -92,7 +92,7 @@ module.exports = function normalizeConfig (config) {
                         avif: option.quality.avif ? getOptionFallback(getOptionProperty(option, 'effort', 'avif', false), config.optimization, 'effort', 'avif', false) : false,
                         webp: option.quality.webp ? getOptionFallback(getOptionProperty(option, 'effort', 'webp', false), config.optimization, 'effort', 'webp', false) : false,
                         png: option.quality.png ? getOptionFallback(getOptionProperty(option, 'effort', 'png', false), config.optimization, 'effort', 'png', false) : false,
-                        jpg: option.quality.jpg ? getOptionFallback(getOptionProperty(option, 'effort', 'jpg', false), config.optimization, 'effort', 'jpg', false) : false,
+                        jpg: false,
                     };
                 } else {
                     delete(file[postfix]);
