@@ -154,7 +154,7 @@ test('getImageSize size round down', () => {
 
 test('getImageSize skip crop if ratio is similar', () => {
     const size = getImageSize({ width: 10000, height: 3333 }, { width: 8000, height: 2666.399 });
-    
+
     expect(size).toEqual({
         width: 8000,
         height: 2666,

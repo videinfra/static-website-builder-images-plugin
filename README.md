@@ -46,7 +46,10 @@ exports.imageSizes = {
     // Default is `false`, images won't be converted into WEBP, won't be optimized and won't be resized
     optimization: {
         // Converting from PNG, JPG or AVIF into WEBP + optimize
-        webp: 89,
+        webp: {
+            quality: 89,
+            effort: 4,
+        },
 
         // Converting from PNG, JPG or WEBP into AVIF + optimize
         // `false` disables converting to format
@@ -67,8 +70,8 @@ exports.imageSizes = {
         // Use different quality for specific images
         '/media/test-quality-1/*.*': { webp: 99 },
 
-        // Convert to format which disabled in optimizations
-        '/media/test-quality-2/*.*': { avif: 99 },
+        // Convert to format which disabled in optimizations, optionally set effort
+        '/media/test-quality-2/*.*': { avif: 99, effort: 2 },
     },
 
     // Resize settings
@@ -101,6 +104,10 @@ exports.imageSizes = {
             // resize and output also in format which was disabled in 'optimization', if in 'optimization' format exists then
             // quality specified here is used
             '@xxl-other': { maxWidth: 800, maxHeight: 800, quality: { avif: 90 } },
+
+            // resize and output also in format which was disabled in 'optimization', if in 'optimization' format exists then
+            // quality specified here is used
+            '@xxl-other-faster': { maxWidth: 800, maxHeight: 800, quality: { avif: 90, effort: 2 } },
         },
     },
 

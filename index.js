@@ -17,22 +17,26 @@ exports.imageSizes = {
     optimization: {
         // Converting from PNG, JPG or AVIF into WEBP + optimize
         webp: {
-            quality: 89
+            quality: 89,
+            effort: 4,
         },
 
         // Converting from PNG, JPG or WEBP into AVIF + optimize
         avif: {
-            quality: 89
+            quality: 89,
+            effort: 2,
         },
 
         // PNG optimization
         png: {
-            quality: 89
+            quality: 89,
+            effort: 4,
         },
 
         // JPG optimization
         jpg: {
-            quality: 91
+            quality: 91,
+            effort: 4,
         },
     },
     */

@@ -1,7 +1,7 @@
 const path = require('path');
 const minimatch = require('minimatch');
 const getFileHash = require('./util/get-file-hash');
-const { getQuality, qualityFallback } = require('./util/get-quality');
+const { getOptionProperty, getOptionFallback } = require('./util/get-option');
 
 function getExtension (fileName) {
     const extension = path.extname(fileName).replace(/^\./, '').toLowerCase();
@@ -70,12 +70,28 @@ function getSizes (fileName, config) {
     for (let pattern in config.convert) {
         if (minimatch(relativeFileName, pattern)) {
             const quality = config.convert[pattern];
+            const webp = getOptionFallback(getOptionProperty(quality, 'quality', 'webp'), config.optimization, 'quality', 'webp');
+            const avif = getOptionFallback(getOptionProperty(quality, 'quality', 'avif'), config.optimization, 'quality', 'avif');
+            const png = getOptionFallback(getOptionProperty(quality, 'quality', 'png'), config.optimization, 'quality', 'png');
+            const jpg = getOptionFallback(getOptionProperty(quality, 'quality', 'jpg'), config.optimization, 'quality', 'jpg');
 
             const encode = {
-                webp: qualityFallback(getQuality(quality, 'webp'), config.optimization, 'webp'),
-                avif: qualityFallback(getQuality(quality, 'avif'), config.optimization, 'avif'),
-                png: qualityFallback(getQuality(quality, 'png'), config.optimization, 'png'),
-                jpg: qualityFallback(getQuality(quality, 'jpg'), config.optimization, 'jpg'),
+                webp: webp ? {
+                    quality: webp,
+                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'webp', false), config.optimization, 'effort', 'webp', false),
+                } : false,
+                avif: avif ? {
+                    quality: avif,
+                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'avif', false), config.optimization, 'effort', 'avif', false),
+                } : false,
+                png: png ? {
+                    quality: png,
+                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'png', false), config.optimization, 'effort', 'png', false),
+                } : false,
+                jpg: jpg ? {
+                    quality: jpg,
+                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'jpg', false), config.optimization, 'effort', 'jpg', false),
+                } : false,
             };
 
             sizeNodes.push({
@@ -94,17 +110,36 @@ function getSizes (fileName, config) {
 
             for (let postfix in sizes) {
                 const quality = sizes[postfix].quality;
+                const effort = sizes[postfix].effort;
 
-                // Size object without 'quality'
+                // Size object without 'quality' and 'effort'
                 const size = Object.assign({}, sizes[postfix]);
                 delete(size.quality);
+                delete(size.effort);
 
                 // Quality goes into 'encode' settings
+                const webp = getOptionFallback(getOptionProperty(quality, 'quality', 'webp'), config.optimization, 'quality', 'webp');
+                const avif = getOptionFallback(getOptionProperty(quality, 'quality', 'avif'), config.optimization, 'quality', 'avif');
+                const png = getOptionFallback(getOptionProperty(quality, 'quality', 'png'), config.optimization, 'quality', 'png');
+                const jpg = getOptionFallback(getOptionProperty(quality, 'quality', 'jpg'), config.optimization, 'quality', 'jpg');
+
                 const encode = {
-                    webp: qualityFallback(getQuality(quality, 'webp'), config.optimization, 'webp'),
-                    avif: qualityFallback(getQuality(quality, 'avif'), config.optimization, 'avif'),
-                    png: qualityFallback(getQuality(quality, 'png'), config.optimization, 'png'),
-                    jpg: qualityFallback(getQuality(quality, 'jpg'), config.optimization, 'jpg'),
+                    webp: webp ? {
+                        quality: webp,
+                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'webp'), config.optimization, 'effort', 'webp', false),
+                    } : false,
+                    avif: avif ? {
+                        quality: avif,
+                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'avif'), config.optimization, 'effort', 'avif', false),
+                    } : false,
+                    png: png ? {
+                        quality: png,
+                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'png'), config.optimization, 'effort', 'png', false),
+                    } : false,
+                    jpg: jpg ? {
+                        quality: jpg,
+                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'jpg'), config.optimization, 'effort', 'jpg', false),
+                    } : false,
                 };
 
                 sizeNodes.push({
@@ -120,11 +155,28 @@ function getSizes (fileName, config) {
 
     // There are no sizes, only optimize the image and convert formats
     if (!sizeNodes.length) {
+        const webp = getOptionProperty(config.optimization, 'quality', 'webp') || false;
+        const avif = getOptionProperty(config.optimization, 'quality', 'avif') || false;
+        const png = extension === 'png' ? getOptionProperty(config.optimization, 'quality', 'png') || false : false;
+        const jpg = extension === 'jpg' ? getOptionProperty(config.optimization, 'quality', 'jpg') || false : false;
+
         const encode = {
-            webp: getQuality(config.optimization, 'webp') || false,
-            avif: getQuality(config.optimization, 'avif') || false,
-            png: extension === 'png' ? getQuality(config.optimization, 'png') || false : false,
-            jpg: extension === 'jpg' ? getQuality(config.optimization, 'jpg') || false : false,
+            webp: webp ? {
+                quality: webp,
+                effort: getOptionProperty(config.optimization, 'effort', 'webp', false) || false,
+            } : false,
+            avif: avif ? {
+                quality: avif,
+                effort: getOptionProperty(config.optimization, 'effort', 'avif', false) || false,
+            } : false,
+            png: png ? {
+                quality: png,
+                effort: getOptionProperty(config.optimization, 'effort', 'png', false) || false,
+            } : false,
+            jpg: jpg ? {
+                quality: jpg,
+                effort: getOptionProperty(config.optimization, 'effort', 'jpg', false) || false,
+            } : false,
         };
 
         sizeNodes.push({
