@@ -1,5 +1,5 @@
 import { getDestPath } from '@videinfra/static-website-builder/lib/get-path.js';
-import globs from '@videinfra/example-website-builder/lib/globs-helper.js';
+import globs from '@videinfra/static-website-builder/lib/globs-helper.js';
 
 /**
  * Modify configuration

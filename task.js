@@ -1,10 +1,10 @@
 import gulp from 'gulp';
 import gulpTask from './gulp/task.js';
-import { nanomemoize } from 'nano-memoize';
+import nanomemoize from 'nano-memoize';
 
-import globs from '@videinfra/example-website-builder/lib/globs-helper.js';
+import globs from '@videinfra/static-website-builder/lib/globs-helper.js';
 import { getSourcePaths, getDestPath } from '@videinfra/static-website-builder/lib/get-path.js';
-import getConfig from '@videinfra/static-website-builder/lib/get-config.js';
+import { getTaskConfig } from '@videinfra/static-website-builder/lib/get-config.js';
 
 import taskStart from '@videinfra/static-website-builder/lib/gulp/task-start.js';
 import taskEnd from '@videinfra/static-website-builder/lib/gulp/task-end.js';
@@ -13,8 +13,8 @@ import taskWatch from '@videinfra/static-website-builder/lib/gulp/task-watch.js'
 
 const getWatchGlobPaths = function (forChokidar = false) {
     const sourcePaths = getSourcePaths('imageSizes');
-    const extensions = getConfig.getTaskConfig('imageSizes', 'extensions');
-    const ignore = getConfig.getTaskConfig('imageSizes', 'ignore');
+    const extensions = getTaskConfig('imageSizes', 'extensions');
+    const ignore = getTaskConfig('imageSizes', 'ignore');
 
     return globs.generate(
         globs.paths(sourcePaths).filesWithExtensions(extensions), // Files to watch
@@ -27,7 +27,7 @@ const getGlobPaths = nanomemoize.nanomemoize(function () {
 });
 
 function imageSizes() {
-    const taskConfig = Object.assign({}, getConfig.getTaskConfig('imageSizes'), {
+    const taskConfig = Object.assign({}, getTaskConfig('imageSizes'), {
         src: getSourcePaths('imageSizes'),
         dest: getDestPath('imageSizes'),
     });
