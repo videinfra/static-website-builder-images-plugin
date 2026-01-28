@@ -1,6 +1,6 @@
-const { getOptionProperty, getOptionFallback } = require('./get-option');
+import { getOptionProperty, getOptionFallback } from './get-option.js';
 
-module.exports = function normalizeConfig (config) {
+export default function normalizeConfig(config) {
     const avif = getOptionProperty(config.optimization, 'quality', 'avif') || false;
     const webp = getOptionProperty(config.optimization, 'quality', 'webp') || false;
     const png = getOptionProperty(config.optimization, 'quality', 'png') || false;
@@ -29,7 +29,7 @@ module.exports = function normalizeConfig (config) {
                 quality: jpg,
                 effort: false,
             },
-        }
+        },
     };
 
     if (config.convert) {
@@ -95,7 +95,7 @@ module.exports = function normalizeConfig (config) {
                         jpg: false,
                     };
                 } else {
-                    delete(file[postfix]);
+                    delete file[postfix];
                 }
             }
         }
@@ -103,6 +103,5 @@ module.exports = function normalizeConfig (config) {
         config.resize = null;
     }
 
-
     return config;
-};
+}

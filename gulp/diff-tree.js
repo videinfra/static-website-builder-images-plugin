@@ -1,6 +1,6 @@
-const fs = require('fs');
-const uniq = require('lodash/uniq');
-const find = require('lodash/find');
+import fs from 'fs';
+import uniq from 'lodash/uniq.js';
+import find from 'lodash/find.js';
 
 // Each node is:
 // {
@@ -16,9 +16,8 @@ const find = require('lodash/find');
 //     resize: { width: 700, minHeight: 400, maxHeight: 600 },
 // }
 
-
-class DiffTree {
-    constructor (options) {
+export default class DiffTree {
+    constructor(options) {
         this.cacheFileName = options.cache;
         this.src = options.src;
         this.dest = options.dest;
@@ -40,7 +39,7 @@ class DiffTree {
      * Load cache from file
      * @protected
      */
-    loadCache () {
+    loadCache() {
         try {
             // Add source and destination paths so that file names are absolute
             const content = fs.readFileSync(this.cacheFileName, { encoding: 'utf8' });
@@ -58,7 +57,7 @@ class DiffTree {
      * Save cache, delayed
      * @protected
      */
-    saveCacheDelayed () {
+    saveCacheDelayed() {
         clearTimeout(this.saveTimer);
         this.saveTimer = setTimeout(this.saveCache.bind(this), 1000);
     }
@@ -67,7 +66,7 @@ class DiffTree {
      * Save cache to file
      * @protected
      */
-    saveCache () {
+    saveCache() {
         clearTimeout(this.saveTimer);
 
         // Remove source and destination paths so that file names are relative
@@ -90,7 +89,7 @@ class DiffTree {
      *
      * @param {array} nodes List of nodes
      */
-    patch (nodes) {
+    patch(nodes) {
         const commands = [];
 
         if (nodes.length) {
@@ -135,19 +134,19 @@ class DiffTree {
                         // Copy file, don't resize and don't convert format and don't optimize
                         commands.push({
                             command: 'copy',
-                            node: node
+                            node: node,
                         });
                     } else if (node.resize) {
                         // Resize + optimize + optionally convert format
                         commands.push({
                             command: 'resize',
-                            node: node
+                            node: node,
                         });
                     } else {
                         // Optimize + optionally convert format
                         commands.push({
                             command: 'convert',
-                            node: node
+                            node: node,
                         });
                     }
                 });
@@ -155,7 +154,7 @@ class DiffTree {
                     // Remove file
                     commands.push({
                         command: 'delete',
-                        node: node
+                        node: node,
                     });
                 });
             });
@@ -182,7 +181,7 @@ class DiffTree {
     /**
      * Finalize tree patching
      */
-    finalize () {
+    finalize() {
         const commands = [];
 
         this.oldTargetFileNames.forEach((targetFileName) => {
@@ -192,7 +191,7 @@ class DiffTree {
                     // Add commands
                     commands.push({
                         command: 'delete',
-                        node: node
+                        node: node,
                     });
 
                     return false;
@@ -208,5 +207,3 @@ class DiffTree {
         return commands;
     }
 }
-
-module.exports = DiffTree;

@@ -10,7 +10,7 @@
  * @returns {object} Image position data
  */
 
-module.exports = function getImagePosition (size, options = {}) {
+export default function getImagePosition(size, options = {}) {
     if (size.crop && options.position) {
         const x = (size.width - size.cropWidth) * options.position[0];
         const y = (size.height - size.cropHeight) * options.position[1];
@@ -28,7 +28,7 @@ module.exports = function getImagePosition (size, options = {}) {
                 top: Math.floor(y),
                 width: size.cropWidth,
                 height: size.cropHeight,
-            }
+            },
         };
     } else {
         return null;

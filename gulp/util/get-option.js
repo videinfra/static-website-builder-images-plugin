@@ -4,7 +4,7 @@
  * @param {any} value Value
  * @returns {boolean}
  */
-function isNumberOrFalse (value) {
+export function isNumberOrFalse(value) {
     return (typeof value === 'number' && value > 0) || value === false;
 }
 
@@ -17,7 +17,7 @@ function isNumberOrFalse (value) {
  * @param {boolean} allowDefault Allow option to be a number
  * @returns {number|boolean|undefined} Property if it exists, false if property is false or undefined if property option wasn't found
  */
-function getOptionProperty (option, name, format, allowDefault = true) {
+export function getOptionProperty(option, name, format, allowDefault = true) {
     if (option) {
         if (typeof option === 'number') {
             return allowDefault ? option : undefined;
@@ -52,16 +52,10 @@ function getOptionProperty (option, name, format, allowDefault = true) {
  * @param {boolean} allowDefault Allow option to be a number
  * @returns {number|boolean|undefined} Property if it exists, false if property is false or undefined
  */
-function getOptionFallback (value, option, name, format, allowDefault = true) {
+export function getOptionFallback(value, option, name, format, allowDefault = true) {
     if (value === undefined) {
         return getOptionProperty(option, name, format, allowDefault) || false;
     } else {
         return value || false;
     }
 }
-
-module.exports = {
-    isNumberOrFalse,
-    getOptionProperty,
-    getOptionFallback
-};
