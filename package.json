@@ -1,10 +1,10 @@
 {
   "name": "@videinfra/static-website-builder-images-plugin",
-  "version": "4.1.1",
+  "version": "5.0.0",
   "description": "Image resize and format converted",
   "license": "MIT",
   "engines": {
-    "node": ">=14.15.0"
+    "node": ">=20.0.0"
   },
   "bugs": {
     "url": "https://github.com/videinfra/static-website-builder-images-plugin/issues"

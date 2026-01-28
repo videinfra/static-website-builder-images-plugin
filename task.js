@@ -1,7 +1,6 @@
 const gulp = require('gulp');
 const gulpTask = require('./gulp/task');
-const nanomemoize = require('nano-memoize');
-const memoize = typeof nanomemoize === 'function' ? nanomemoize : nanomemoize.default;
+const { nanomemoize } = require('nano-memoize');
 
 const globs = require('@videinfra/static-website-builder/lib/globs-helper');
 const getPaths = require('@videinfra/static-website-builder/lib/get-path');
@@ -13,15 +12,19 @@ const taskBeforeDest = require('@videinfra/static-website-builder/lib/gulp/task-
 const taskWatch = require('@videinfra/static-website-builder/lib/gulp/task-watch');
 
 
-const getGlobPaths = memoize(function () {
+const getWatchGlobPaths = function (forChokidar = false) {
     const sourcePaths = getPaths.getSourcePaths('imageSizes');
     const extensions = getConfig.getTaskConfig('imageSizes', 'extensions');
     const ignore = getConfig.getTaskConfig('imageSizes', 'ignore');
 
     return globs.generate(
         globs.paths(sourcePaths).filesWithExtensions(extensions), // Files to watch
-        globs.paths(sourcePaths).paths(ignore).ignore()           // List of files which to ignore
+        globs.paths(sourcePaths).paths(ignore).ignore(),           // List of files which to ignore
+        forChokidar
     );
+};
+const getGlobPaths = nanomemoize(function () {
+    return getWatchGlobPaths(false);
 });
 
 
@@ -45,7 +48,7 @@ function imageSizes () {
 }
 
 function imageSizesWatch () {
-    return taskWatch(getGlobPaths(), imageSizes);
+    return taskWatch(getWatchGlobPaths(true), imageSizes);
 }
 
 exports.build = imageSizes;
