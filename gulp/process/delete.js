@@ -1,10 +1,10 @@
-const fsPromises = require('fs').promises;
+import fsPromises from 'fs/promises';
 
 /**
  * Deletes files
  */
-class DeleteProcessing {
-    add (node) {
+export default class DeleteProcessing {
+    add(node) {
         const result = { success: [], failure: [] };
         let extensions = [];
 
@@ -18,7 +18,8 @@ class DeleteProcessing {
 
         const promises = extensions.map((extension) => {
             const fileName = node.targetFileName + (extension ? '.' + extension : '');
-            return fsPromises.unlink(fileName)
+            return fsPromises
+                .unlink(fileName)
                 .then(() => {
                     result.success.push(node.targetFileName);
                 })
@@ -32,5 +33,3 @@ class DeleteProcessing {
         });
     }
 }
-
-module.exports = DeleteProcessing;

@@ -1,14 +1,14 @@
-const path = require('path');
-const sharp = require('sharp');
-const getImagePosition = require('../util/get-image-position');
-const getImageSize = require('../util/get-image-size');
-const fsPromises = require('fs').promises;
+import path from 'path';
+import sharp from 'sharp';
+import getImagePosition from '../util/get-image-position.js';
+import getImageSize from '../util/get-image-size.js';
+import fsPromises from 'fs/promises';
 
 /**
  * Converts image formats and resizes images
  */
-class ConvertProcessing {
-    constructor () {
+export default class ConvertProcessing {
+    constructor() {
         this.streams = {};
         this.queue = [];
     }
@@ -19,16 +19,18 @@ class ConvertProcessing {
      * @param {object} node Node
      * @returns {Promise} Promise which is resolved when image processing is done
      */
-    add (node) {
+    add(node) {
         return new Promise((resolve, reject) => {
             this.queue.push({
                 resolve,
                 reject,
                 node: node,
-                processing: false
+                processing: false,
             });
 
-            setTimeout(() => { this.next(); }, 16);
+            setTimeout(() => {
+                this.next();
+            }, 16);
         });
     }
 
@@ -37,7 +39,7 @@ class ConvertProcessing {
      *
      * @protected
      */
-    next () {
+    next() {
         const next = this.queue.find((element) => element.processing === false);
 
         if (next) {
@@ -59,14 +61,15 @@ class ConvertProcessing {
      * @param {string} sourceFileName Input file name
      * @returns {Promise} Prmomise which is resolved with { image, metadata }
      */
-    getStream (sourceFileName) {
+    getStream(sourceFileName) {
         if (!this.streams[sourceFileName]) {
             this.streams[sourceFileName] = new Promise((resolve, reject) => {
                 const image = sharp(sourceFileName, {
                     // can reduce memory usage and might improve performance on some systems
-                    sequentialRead: true
+                    sequentialRead: true,
                 });
-                image.metadata()
+                image
+                    .metadata()
                     .then((metadata) => {
                         resolve({ image: image, metadata: metadata });
                     })
@@ -83,7 +86,7 @@ class ConvertProcessing {
      *
      * @protected
      */
-    cleanUpStreams () {
+    cleanUpStreams() {
         const streams = this.streams;
         const queue = this.queue;
 
@@ -92,7 +95,7 @@ class ConvertProcessing {
 
             // Remove stream if there are no queued nodes with given name
             if (!node) {
-                delete(streams[sourceFileName]);
+                delete streams[sourceFileName];
             }
         }
     }
@@ -103,7 +106,7 @@ class ConvertProcessing {
      * @param {object} item Item
      * @protected
      */
-    removeFromQueue (item) {
+    removeFromQueue(item) {
         this.queue = this.queue.filter((currentItem) => {
             return currentItem !== item;
         });
@@ -115,7 +118,7 @@ class ConvertProcessing {
      * @param {object} next Object with 'node', 'resolve', 'reject'
      * @param {object} stream Object with 'image', 'metadata'
      */
-    convert (next, stream) {
+    convert(next, stream) {
         const resize = next.node.resize ? getImageSize(stream.metadata, next.node.resize) : null;
         const position = resize ? getImagePosition(resize, next.node.resize) : null;
         const encode = next.node.encode;
@@ -129,7 +132,7 @@ class ConvertProcessing {
         // List of generated files
         const result = {
             success: [],
-            failure: []
+            failure: [],
         };
 
         let converted = stream.image.clone();
@@ -141,7 +144,7 @@ class ConvertProcessing {
                     width: position.resize.width,
                     height: position.resize.height,
                     fit: sharp.fit.cover,
-                    withoutEnlargement: true
+                    withoutEnlargement: true,
                 });
 
                 // Crop after resizing
@@ -151,7 +154,7 @@ class ConvertProcessing {
                     width: resize.cropWidth,
                     height: resize.cropHeight,
                     fit: sharp.fit.cover,
-                    withoutEnlargement: true
+                    withoutEnlargement: true,
                 });
             }
         }
@@ -174,14 +177,14 @@ class ConvertProcessing {
                     converted = converted[formatFunctionName](encodeOptions);
                     converted
                         .toFile(outputFileName)
-                            .then(() => {
-                                result.success.push(outputFileName);
-                                nextFormat();
-                            })
-                            .catch((err) => {
-                                result.failure.push({ fileName: outputFileName, error: err });
-                                nextFormat();
-                            });
+                        .then(() => {
+                            result.success.push(outputFileName);
+                            nextFormat();
+                        })
+                        .catch((err) => {
+                            result.failure.push({ fileName: outputFileName, error: err });
+                            nextFormat();
+                        });
                 } else {
                     // sharp doesn't support specified format
                     nextFormat();
@@ -208,10 +211,8 @@ class ConvertProcessing {
      * @returns {Promise}
      * @protected
      */
-    createFolder (targetFileName) {
+    createFolder(targetFileName) {
         const folder = path.dirname(targetFileName);
         return fsPromises.mkdir(folder, { recursive: true });
     }
 }
-
-module.exports = ConvertProcessing;

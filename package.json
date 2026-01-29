@@ -1,10 +1,12 @@
 {
   "name": "@videinfra/static-website-builder-images-plugin",
-  "version": "4.1.1",
+  "version": "5.0.0",
   "description": "Image resize and format converted",
   "license": "MIT",
+  "type": "module",
+  "main": "index.js",
   "engines": {
-    "node": ">=14.15.0"
+    "node": ">=20.0.0"
   },
   "bugs": {
     "url": "https://github.com/videinfra/static-website-builder-images-plugin/issues"
@@ -14,13 +16,13 @@
     "url": "git+https://github.com/videinfra/static-website-builder-images-plugin.git"
   },
   "scripts": {
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "author": "Vide Infra",
   "dependencies": {
-    "sharp": "^0.32.6"
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "jest": "^29.6.2"
+    "jest": "^30.2.0"
   }
 }

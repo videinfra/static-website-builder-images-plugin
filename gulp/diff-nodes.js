@@ -1,9 +1,9 @@
-const path = require('path');
-const minimatch = require('minimatch');
-const getFileHash = require('./util/get-file-hash');
-const { getOptionProperty, getOptionFallback } = require('./util/get-option');
+import path from 'path';
+import minimatch from 'minimatch';
+import getFileHash from './util/get-file-hash.js';
+import { getOptionProperty, getOptionFallback } from './util/get-option.js';
 
-function getExtension (fileName) {
+function getExtension(fileName) {
     const extension = path.extname(fileName).replace(/^\./, '').toLowerCase();
     return extension === 'jpeg' ? 'jpg' : extension;
 }
@@ -14,9 +14,9 @@ function getExtension (fileName) {
  * @param {string} folderName Folder name
  * @returns {string} Folder name without slash at the end
  */
-function normalizePath (folderName) {
-    if (folderName.substr(-1) === path.sep) {
-        folderName = folderName.substr(0, folderName.length - 1);
+function normalizePath(folderName) {
+    if (folderName.slice(-1) === path.sep) {
+        folderName = folderName.slice(0, folderName.length - 1);
     }
 
     return folderName;
@@ -29,7 +29,7 @@ function normalizePath (folderName) {
  * @param {object} config Config
  * @returns {string} Relative file name
  */
-function getRelativeFileName (fileName, config) {
+function getRelativeFileName(fileName, config) {
     const srcPaths = config.src;
 
     // Look through source paths to find filename relative to source path
@@ -50,7 +50,7 @@ function getRelativeFileName (fileName, config) {
  * @param {string} fileName File name
  * @returns {string} File name without extension
  */
-function removeFileExtension (fileName) {
+function removeFileExtension(fileName) {
     return fileName.replace(/\.[^.\/\\]*?$/, '');
 }
 
@@ -61,7 +61,7 @@ function removeFileExtension (fileName) {
  * @param {object} config Configuration
  * @returns {array} List of nodes
  */
-function getSizes (fileName, config) {
+function getSizes(fileName, config) {
     const relativeFileName = getRelativeFileName(fileName, config);
     const relativeFileNameNoExtension = removeFileExtension(relativeFileName);
     const extension = getExtension(fileName);
@@ -76,22 +76,30 @@ function getSizes (fileName, config) {
             const jpg = getOptionFallback(getOptionProperty(quality, 'quality', 'jpg'), config.optimization, 'quality', 'jpg');
 
             const encode = {
-                webp: webp ? {
-                    quality: webp,
-                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'webp', false), config.optimization, 'effort', 'webp', false),
-                } : false,
-                avif: avif ? {
-                    quality: avif,
-                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'avif', false), config.optimization, 'effort', 'avif', false),
-                } : false,
-                png: png ? {
-                    quality: png,
-                    effort: getOptionFallback(getOptionProperty(quality, 'effort', 'png', false), config.optimization, 'effort', 'png', false),
-                } : false,
-                jpg: jpg ? {
-                    quality: jpg,
-                    effort: false,
-                } : false,
+                webp: webp
+                    ? {
+                          quality: webp,
+                          effort: getOptionFallback(getOptionProperty(quality, 'effort', 'webp', false), config.optimization, 'effort', 'webp', false),
+                      }
+                    : false,
+                avif: avif
+                    ? {
+                          quality: avif,
+                          effort: getOptionFallback(getOptionProperty(quality, 'effort', 'avif', false), config.optimization, 'effort', 'avif', false),
+                      }
+                    : false,
+                png: png
+                    ? {
+                          quality: png,
+                          effort: getOptionFallback(getOptionProperty(quality, 'effort', 'png', false), config.optimization, 'effort', 'png', false),
+                      }
+                    : false,
+                jpg: jpg
+                    ? {
+                          quality: jpg,
+                          effort: false,
+                      }
+                    : false,
             };
 
             sizeNodes.push({
@@ -114,8 +122,8 @@ function getSizes (fileName, config) {
 
                 // Size object without 'quality' and 'effort'
                 const size = Object.assign({}, sizes[postfix]);
-                delete(size.quality);
-                delete(size.effort);
+                delete size.quality;
+                delete size.effort;
 
                 // Quality goes into 'encode' settings
                 const webp = getOptionFallback(getOptionProperty(quality, 'quality', 'webp'), config.optimization, 'quality', 'webp');
@@ -124,22 +132,30 @@ function getSizes (fileName, config) {
                 const jpg = getOptionFallback(getOptionProperty(quality, 'quality', 'jpg'), config.optimization, 'quality', 'jpg');
 
                 const encode = {
-                    webp: webp ? {
-                        quality: webp,
-                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'webp'), config.optimization, 'effort', 'webp', false),
-                    } : false,
-                    avif: avif ? {
-                        quality: avif,
-                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'avif'), config.optimization, 'effort', 'avif', false),
-                    } : false,
-                    png: png ? {
-                        quality: png,
-                        effort: getOptionFallback(getOptionProperty(effort, 'effort', 'png'), config.optimization, 'effort', 'png', false),
-                    } : false,
-                    jpg: jpg ? {
-                        quality: jpg,
-                        effort: false,
-                    } : false,
+                    webp: webp
+                        ? {
+                              quality: webp,
+                              effort: getOptionFallback(getOptionProperty(effort, 'effort', 'webp'), config.optimization, 'effort', 'webp', false),
+                          }
+                        : false,
+                    avif: avif
+                        ? {
+                              quality: avif,
+                              effort: getOptionFallback(getOptionProperty(effort, 'effort', 'avif'), config.optimization, 'effort', 'avif', false),
+                          }
+                        : false,
+                    png: png
+                        ? {
+                              quality: png,
+                              effort: getOptionFallback(getOptionProperty(effort, 'effort', 'png'), config.optimization, 'effort', 'png', false),
+                          }
+                        : false,
+                    jpg: jpg
+                        ? {
+                              quality: jpg,
+                              effort: false,
+                          }
+                        : false,
                 };
 
                 sizeNodes.push({
@@ -161,22 +177,30 @@ function getSizes (fileName, config) {
         const jpg = extension === 'jpg' ? getOptionProperty(config.optimization, 'quality', 'jpg') || false : false;
 
         const encode = {
-            webp: webp ? {
-                quality: webp,
-                effort: getOptionProperty(config.optimization, 'effort', 'webp', false) || false,
-            } : false,
-            avif: avif ? {
-                quality: avif,
-                effort: getOptionProperty(config.optimization, 'effort', 'avif', false) || false,
-            } : false,
-            png: png ? {
-                quality: png,
-                effort: getOptionProperty(config.optimization, 'effort', 'png', false) || false,
-            } : false,
-            jpg: jpg ? {
-                quality: jpg,
-                effort: false,
-            } : false,
+            webp: webp
+                ? {
+                      quality: webp,
+                      effort: getOptionProperty(config.optimization, 'effort', 'webp', false) || false,
+                  }
+                : false,
+            avif: avif
+                ? {
+                      quality: avif,
+                      effort: getOptionProperty(config.optimization, 'effort', 'avif', false) || false,
+                  }
+                : false,
+            png: png
+                ? {
+                      quality: png,
+                      effort: getOptionProperty(config.optimization, 'effort', 'png', false) || false,
+                  }
+                : false,
+            jpg: jpg
+                ? {
+                      quality: jpg,
+                      effort: false,
+                  }
+                : false,
         };
 
         sizeNodes.push({
@@ -202,54 +226,64 @@ function getSizes (fileName, config) {
  * @param {object} config Configuration
  * @returns {array} List of nodes
  */
-module.exports = function generateDiffNodes (fileName, config) {
+export default function generateDiffNodes(fileName, config) {
     const extension = getExtension(fileName);
 
     // Only specific file formats can be converted
     if (extension === 'jpg' || extension === 'png' || extension === 'webp' || extension === 'avif') {
-        const sizes = getSizes (fileName, config);
+        const sizes = getSizes(fileName, config);
 
         return getFileHash(fileName)
             .then((hash) => {
                 return sizes.map((size) => {
-                    return Object.assign({
-                        sourceFileName: fileName,
-                        sourceHash: hash,
-                    }, size);
+                    return Object.assign(
+                        {
+                            sourceFileName: fileName,
+                            sourceHash: hash,
+                        },
+                        size,
+                    );
                 });
             })
             .catch(() => {
                 return sizes.map((size) => {
-                    return Object.assign({
-                        sourceFileName: fileName,
-                        sourceHash: null,
-                    }, size);
+                    return Object.assign(
+                        {
+                            sourceFileName: fileName,
+                            sourceHash: null,
+                        },
+                        size,
+                    );
                 });
             });
     } else {
         // All other files needs to be just copied
         return getFileHash(fileName)
             .then((hash) => {
-                return [{
-                    sourceFileName: fileName,
-                    sourceHash: hash,
-                    targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
-                    resize: false,
-                    encode: false,
-                    copy: true,
-                    count: 1,
-                }];
+                return [
+                    {
+                        sourceFileName: fileName,
+                        sourceHash: hash,
+                        targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
+                        resize: false,
+                        encode: false,
+                        copy: true,
+                        count: 1,
+                    },
+                ];
             })
             .catch(() => {
-                return [{
-                    sourceFileName: fileName,
-                    sourceHash: null,
-                    targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
-                    resize: false,
-                    encode: false,
-                    copy: true,
-                    count: 1,
-                }];
+                return [
+                    {
+                        sourceFileName: fileName,
+                        sourceHash: null,
+                        targetFileName: path.join(config.dest, getRelativeFileName(fileName, config)),
+                        resize: false,
+                        encode: false,
+                        copy: true,
+                        count: 1,
+                    },
+                ];
             });
     }
-};
+}

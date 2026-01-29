@@ -1,6 +1,5 @@
-const getPaths = require('@videinfra/static-website-builder/lib/get-path');
-const globs = require('@videinfra/static-website-builder/lib/globs-helper');
-
+import { getDestPath } from '@videinfra/static-website-builder/lib/get-path.js';
+import globs from '@videinfra/static-website-builder/lib/globs-helper.js';
 
 /**
  * Modify configuration
@@ -9,7 +8,7 @@ const globs = require('@videinfra/static-website-builder/lib/globs-helper');
  * @param {object} fullConfig Full configuration
  * @returns {object} Transformed images plugin configuration
  */
-module.exports = function preprocessCleanConfig (config = {}, fullConfig) {
+export default function preprocessCleanConfig(config = {}, fullConfig) {
     if (config && fullConfig.clean) {
         // Add exception for images and folder to the 'clean' patterns to prevent
         // images from being removed
@@ -28,10 +27,14 @@ module.exports = function preprocessCleanConfig (config = {}, fullConfig) {
         // Generate glob patterns and normalize paths to absolute
         fullConfig.clean.patterns = fullConfig.clean.patterns || [];
 
-        globs.paths(getPaths.getDestPath()).paths(patterns).generate().forEach((pattern) => {
-            fullConfig.clean.patterns.push(pattern);
-        });
+        globs
+            .paths(getDestPath())
+            .paths(patterns)
+            .generate()
+            .forEach((pattern) => {
+                fullConfig.clean.patterns.push(pattern);
+            });
     }
 
     return config;
-};
+}

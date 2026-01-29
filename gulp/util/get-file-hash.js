@@ -1,8 +1,8 @@
-const fs = require('fs');
-const crypto = require('crypto');
-const chalk = require('chalk');
+import fs from 'fs';
+import crypto from 'crypto';
+import chalk from 'chalk';
 
-module.exports = function getFileHash (fileName) {
+export default function getFileHash(fileName) {
     return new Promise((resolve, reject) => {
         try {
             const stream = fs.createReadStream(fileName);
@@ -13,9 +13,9 @@ module.exports = function getFileHash (fileName) {
                 resolve(hash.digest('hex'));
             });
         } catch (err) {
-            console.log(chalk.redBright(`Failed to load "${ fileName }" hash`));
+            console.log(chalk.redBright(`Failed to load "${fileName}" hash`));
             console.error(err);
             reject();
         }
     });
-};
+}

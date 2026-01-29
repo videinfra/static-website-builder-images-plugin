@@ -1,7 +1,10 @@
-// Disable regular 'images' plugin
-exports.images = false;
+import * as imagesTask from './task.js';
+import * as preprocessImagesConfig from './preprocess-config.js';
 
-exports.imageSizes = {
+// Disable regular 'images' plugin
+export const images = false;
+
+export const imageSizes = {
     // Glob list of files, which to ignore, relative to the image source folder
     // see https://gulpjs.com/docs/en/getting-started/explaining-globs/
     ignore: [
@@ -53,15 +56,15 @@ exports.imageSizes = {
     }
 };
 
-exports.tasks = {
+export const tasks = {
     imageSizes: [
-        require('./task'),
+        imagesTask,
     ]
 };
 
-exports.preprocess = {
+export const preprocess = {
     clean: [
-        require('./preprocess-config'),
+        preprocessImagesConfig,
     ]
 };
 
@@ -69,7 +72,7 @@ exports.preprocess = {
 /**
  * Paths relative to the global src and dest folders
  */
-exports.paths = {
+export const paths = {
     imageSizes: {
         'src': 'images',
         'dest': 'assets/images',

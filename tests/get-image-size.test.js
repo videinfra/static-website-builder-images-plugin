@@ -1,4 +1,4 @@
-const getImageSize = require('../gulp/util/get-image-size');
+import getImageSize from '../gulp/util/get-image-size.js';
 
 test('getImageSize scale down using multiplier', () => {
     const size = getImageSize({ width: 1000, height: 500 }, { multiplier: 0.5 });
